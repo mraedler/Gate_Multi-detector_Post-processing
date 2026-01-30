@@ -7,7 +7,6 @@
 #include <TString.h>
 #include <TTree.h>
 #include <TFile.h>
-#include <TKey.h>
 #include <TLeaf.h>
 #include <TH3.h>
 #include <TApplication.h>
@@ -24,30 +23,7 @@
 
 #include <unistd.h>   // fork(), _exit()
 #include <sys/wait.h> // wait()
-
-
-
-void listAvailableTrees(TFile* file) {
-	TList* keys = file->GetListOfKeys();
-	TIter next(keys);
-	TKey* key;
-	while ((key = (TKey*)next())) {
-		TObject* obj = key->ReadObj();
-		if (obj->InheritsFrom(TTree::Class())) {
-			std::cout << "Found tree: " << obj->GetName() << std::endl;
-		}
-	}
-}
-
-
-
-void listAvailableLeafs(TTree* tree) {
-	TObjArray* leaves = tree->GetListOfLeaves();
-	for (int ii = 0; ii < leaves->GetEntries(); ii++) {
-		TLeaf* leaf = (TLeaf*)leaves->At(ii);
-		std::cout << "Found leaf: " << leaf->GetName() << " (type: " << leaf->GetTypeName() << ")" << std::endl;
-	}
-}
+#include "include/utils.h"
 
 
 
@@ -75,7 +51,7 @@ void printTH3BinEdges(const TH3& h) {
 }
 
 
-
+/*
 struct LutEntry {
     float Posx;
     float Posy;
@@ -84,7 +60,9 @@ struct LutEntry {
     float OrVy;
     float OrVz;
 };
+*/
 
+/*
 std::vector<LutEntry> readLutBinary(const char* filePath)
 {
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
@@ -97,7 +75,7 @@ std::vector<LutEntry> readLutBinary(const char* filePath)
 
     return lut;
 }
-
+*/
 
 
 template <typename T>
@@ -109,21 +87,21 @@ void printVectorEntries(std::vector<T>& arr) {
 }
 
 
-
+/*
 template <typename T>
-TH1D* getHistogram(std::vector<T>& arr, float lowerEdge, float binWidth, int nBins, const char* name, const char* labeling) {
-	
+TH1D* getHistogram(std::vector<T>& arr, const float lowerEdge, const float binWidth, const int nBins, const char* name, const char* labeling) {
+
 	TH1D* hist = new TH1D(name, labeling, nBins, lowerEdge, lowerEdge + nBins * binWidth);
-	
+
     for (const T& a : arr)
         hist->Fill(a);
-	
+
 	return hist;
 }
+*/
 
-
-
-std::vector<int> getCASToRID(TTree* tree, TLeaf* gantryID, TLeaf* rsectorID, TLeaf* crystalID, TLeaf* layerID, TLeaf* globalPosX, TLeaf* globalPosY, TLeaf* globalPosZ, std::vector<LutEntry> lut, bool vis) {
+/*
+std::vector<int> getCASToRID(TTree* tree, TLeaf* gantryID, TLeaf* rsectorID, TLeaf* crystalID, TLeaf* layerID, TLeaf* globalPosX, TLeaf* globalPosY, TLeaf* globalPosZ, const std::vector<LutEntry>& lut, bool vis) {
 	constexpr std::array<std::array<std::uint32_t, 5>, 3> gantryShape{{
 		{2, 2, 24, 16, 330},
 		{2, 3, 24, 16, 600},
@@ -256,10 +234,10 @@ std::vector<int> getCASToRID(TTree* tree, TLeaf* gantryID, TLeaf* rsectorID, TLe
     
     return CASToRIDs;
 }
+*/
 
-
-
-std::vector<bool> setMinSectorDifference(TTree* tree, TLeaf* gantryID1, TLeaf* gantryID2, TLeaf* rsectorID1, TLeaf* rsectorID2, int minSectorDifference, bool plotHistogram) {
+/*
+std::vector<bool> setMinSectorDifference(TTree* tree, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* rsectorID1, const TLeaf* rsectorID2, int minSectorDifference, bool plotHistogram) {
 	
 	//Long64_t nEntries = tree->GetEntries() / 100;
 	Long64_t nEntries = tree->GetEntries();
@@ -313,10 +291,10 @@ std::vector<bool> setMinSectorDifference(TTree* tree, TLeaf* gantryID1, TLeaf* g
 	
 	return aboveMinSectorDifference;
 }
+*/
 
-
-
-double findFirstMinimumAfterZero(std::vector<double> scatterTestForHistogram, bool vis) {
+/*
+double findFirstMinimumAfterZero(std::vector<double> scatterTestForHistogram, const bool vis) {
 	// 
 	float lowerEdgeHist = -100.5;  // [cm]
 	float binWidthHist = 1.;  // [cm]
@@ -363,9 +341,9 @@ double findFirstMinimumAfterZero(std::vector<double> scatterTestForHistogram, bo
 	return binCenterMinimum;
 	
 }
+*/
 
-
-
+/*
 std::vector<bool> runScatterTest(TTree* tree, TLeaf* time1, TLeaf* time2, TLeaf* gantryID1, TLeaf* gantryID2, std::vector<LutEntry> lut, std::vector<int> CASToRID1, std::vector<int> CASToRID2, std::vector<bool> aboveMinSectorDifference, bool verbose) {
 	
 	//Long64_t nEntries = tree->GetEntries() / 100;
@@ -433,7 +411,7 @@ std::vector<bool> runScatterTest(TTree* tree, TLeaf* time1, TLeaf* time2, TLeaf*
 	
 	return passingScatterTest;
 }
-
+*/
 
 
 std::vector<bool> andVector(std::vector<bool>& a, std::vector<bool>& b, std::string abc, bool verbose) {
@@ -477,14 +455,14 @@ std::vector<T> getSelectionVector(TTree* tree, TLeaf* leaf, const std::vector<bo
 }
 
 
-
+/*
 std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>> groupCoincidences(TTree* tree, TLeaf* time1, TLeaf* time2, TLeaf* energy1, TLeaf* energy2, std::vector<bool> preSelection)
-{	
+{
 	//Long64_t nEntries = tree->GetEntries() / 100;
 	Long64_t nEntries = tree->GetEntries();
 
 	Long64_t ii = 0;
-	
+
 	std::vector<Long64_t> groupEdges = {0};
 	std::vector<Long64_t> groupMultiplicities;
 	std::vector<Long64_t> idx1, idx2;
@@ -497,19 +475,19 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 
 		while (ii < nEntries) {
 			tree->GetEntry(ii);
-			
+
 			auto k1 = std::make_tuple(time1->GetValue(), energy1->GetValue());
 			auto k2 = std::make_tuple(time2->GetValue(), energy2->GetValue());
-			
+
 			// If seen is not empty and both times have not been seen
 			if (!seen.empty() && !seen.count(k1) && !seen.count(k2)) {
 				break;
 			}
-			
+
 			// The std::set only inserts values (or tuples here) that it has not seen before; so no additional check necessary here
 			//seen.insert(k1);
 			//seen.insert(k2);
-			
+
 			// Using the std::map instead
 			if (!seen.count(k1)) {
 				seen[k1] = nextId++;
@@ -520,28 +498,28 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 
 			idx1.push_back(seen[k1]);
 			idx2.push_back(seen[k2]);
-			
+
 			ii++;
 		}
-		
+
 		groupEdges.push_back(ii);
 		groupMultiplicities.push_back(seen.size());
 	}
-	
+
 	if (groupEdges.back() != nEntries) {
 		std::cerr << "Warning: not all elements grouped!\n";
 	}
-	
-	/*
+
+
 	// Print all time entries
 	for (Long64_t jj = 0; jj < nEntries; jj++) {
 		tree->GetEntry(jj);
 		std::cout << std::setprecision(16) << jj << " " << time1->GetValue() << " " << time2->GetValue() << std::endl;
 	}
 	std::cout << std::endl;
-	*/
-	
-	/*
+
+
+
 	// Print grouped time entries
 	for (Long64_t jj = groupEdges.size() - 100; jj < groupEdges.size() - 1; jj++){
 		std::cout << groupEdges[jj] << " " << groupEdges[jj + 1] << std::endl;
@@ -551,17 +529,17 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 		}
 		std::cout << std::endl;
 	}
-	*/
-	
-	/*
+
+
+
 	std::cout << groupEdges.size() << std::endl;
 	std::cout << groupMultiplicities.size() << std::endl;
 	std::cout << idx1.size() << std::endl;
 	std::cout << idx2.size() << std::endl;
 	std::cout << nEntries << std::endl;
-	*/
-	
-	/*
+
+
+
 	// Check for multiplicity 1, indicating whether the criterion to identfy identical events is insufficient
 	for (Long64_t jj = 0; jj < groupEdges.size() - 1; jj++){
 		if (groupMultiplicities[jj] == 1) {
@@ -575,9 +553,9 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 			std::cout << std::endl;
 		}
 	}
-	*/
-	
-	/*
+
+
+
 	// Check the indexing
 	for (Long64_t jj = groupEdges.size() - 100; jj < groupEdges.size() - 1; jj++){
 		std::cout << groupEdges[jj] << " " << groupEdges[jj + 1] << std::endl;
@@ -587,13 +565,13 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 		}
 		std::cout << std::endl;
 	}
-	*/
-	
+
+
 	return {groupEdges, groupMultiplicities, idx1, idx2};
 }
+*/
 
-
-
+/*
 std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>> groupCoincidences2(std::vector<double>& time1, std::vector<double>& time2, std::vector<float>& energy1, std::vector<float>& energy2)
 {	
 	Long64_t nEntries = time1.size();
@@ -645,15 +623,15 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 		std::cerr << "Warning: not all elements grouped!\n";
 	}
 	
-	/*
+
 	// Print all time entries
 	for (Long64_t jj = 0; jj < nEntries; jj++) {
 		std::cout << std::setprecision(16) << jj << " " << time1[jj] << " " << time2[jj] << std::endl;
 	}
 	std::cout << std::endl;
-	*/
+
 	
-	/*
+
 	// Print grouped time entries
 	for (Long64_t jj = groupEdges.size() - 100; jj < groupEdges.size() - 1; jj++){
 		std::cout << groupEdges[jj] << " " << groupEdges[jj + 1] << std::endl;
@@ -662,17 +640,17 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 		}
 		std::cout << std::endl;
 	}
-	*/
+
 	
-	/*
+
 	std::cout << groupEdges.size() << std::endl;
 	std::cout << groupMultiplicities.size() << std::endl;
 	std::cout << idx1.size() << std::endl;
 	std::cout << idx2.size() << std::endl;
 	std::cout << nEntries << std::endl;
-	*/
+
 	
-	/*
+
 	// Check for multiplicity 1, indicating whether the criterion to identfy identical events is insufficient
 	for (Long64_t jj = 0; jj < groupEdges.size() - 1; jj++){
 		if (groupMultiplicities[jj] == 1) {
@@ -685,9 +663,9 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 			std::cout << std::endl;
 		}
 	}
-	*/
+
 	
-	/*
+
 	// Check the indexing
 	for (Long64_t jj = groupEdges.size() - 100; jj < groupEdges.size() - 1; jj++){
 		std::cout << groupEdges[jj] << " " << groupEdges[jj + 1] << std::endl;
@@ -696,14 +674,14 @@ std::tuple<std::vector<Long64_t>, std::vector<Long64_t>, std::vector<Long64_t>, 
 		}
 		std::cout << std::endl;
 	}
-	*/
+
 	
 	return {groupEdges, groupMultiplicities, idx1, idx2};
 }
-	
+*/
 
-
-void plotGroupStatistics(std::vector<Long64_t>& groupEdges, std::vector<Long64_t>& groupMultiplicities) {
+/*
+void plotGroupStatistics(const std::vector<Long64_t>& groupEdges, std::vector<Long64_t>& groupMultiplicities) {
 	// Get the group sizes
 	std::vector<Long64_t> groupSizes;
     for (size_t ii = 0; ii < groupEdges.size() - 1; ++ii)
@@ -729,10 +707,10 @@ void plotGroupStatistics(std::vector<Long64_t>& groupEdges, std::vector<Long64_t
 	
     app.Run();
 }
+*/
 
 
-
-std::vector<bool> selectBasedOnTime(std::vector<Long64_t>& groupEdges, std::vector<Long64_t>& idx1, std::vector<Long64_t>& idx2, bool verbose) {
+std::vector<bool> selectBasedOnTime(const std::vector<Long64_t>& groupEdges, const std::vector<Long64_t>& idx1, const std::vector<Long64_t>& idx2, const bool verbose) {
 	std::vector<bool> selection(idx1.size(), false);
 	
 	for (Long64_t jj = 0; jj < groupEdges.size() - 1; jj++){
@@ -763,7 +741,7 @@ std::vector<bool> selectBasedOnTime(std::vector<Long64_t>& groupEdges, std::vect
 
 
 
-std::vector<bool> selectBasedOnEnergy(std::vector<Long64_t>& groupEdges, std::vector<Long64_t>& idx1, std::vector<Long64_t>& idx2, std::vector<float>& energy1, std::vector<float>& energy2, bool verbose) {
+std::vector<bool> selectBasedOnEnergy(const std::vector<Long64_t>& groupEdges, const std::vector<Long64_t>& idx1, const std::vector<Long64_t>& idx2, const std::vector<float>& energy1, const std::vector<float>& energy2, const bool verbose) {
 	std::vector<bool> selection(idx1.size(), false);
 	
 	for (Long64_t jj = 0; jj < groupEdges.size() - 1; jj++){
@@ -823,7 +801,7 @@ std::vector<bool> resetSelectionVector(const std::vector<bool>& selectionDense, 
 
 
 
-TH3D* getSensitivityMap(const TString fullPath, const TString& treeName, const TString& gantryName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels)
+TH3D* getSensitivityMap(const TString& fullPath, const TString& treeName, const TString& gantryName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels)
 {
 	// Allocate the output array
 	TH3D* h = new TH3D(gSystem->BaseName(fullPath), "Counts", 
@@ -839,14 +817,15 @@ TH3D* getSensitivityMap(const TString fullPath, const TString& treeName, const T
 		std::cerr << "Error opening file " << fullPath << std::endl;
 		return h;
 	}
-	//listAvailableTrees(&f);
+	listAvailableTrees(&f);
 
 	TTree* tree = (TTree*)f.Get(treeName);
 	if (!tree) {
 		std::cerr << "Tree " << treeName << " not found in " << fullPath << std::endl;
 		return h;
     }
-	//listAvailableLeafs(tree);
+
+	listAvailableLeaves(tree);
 
 	// For the loop over all entries
 	//Long64_t nEntries = tree->GetEntries() / 100;
@@ -1001,7 +980,7 @@ TH3D* mergeSensitivityMaps(TH3D* a, TH3D* b) {
 
 
 
-auto getSensitivityMapsThreads(const std::vector<TString> fullPaths, const std::string treeName, const std::string gantryName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels)
+auto getSensitivityMapsThreads(const std::vector<TString>& fullPaths, const std::string& treeName, const std::string& gantryName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels)
 {
 	// Run in parallel
 	int nThreads = 16;  // (todo: remove hard coding)
@@ -1024,7 +1003,8 @@ auto getSensitivityMapsThreads(const std::vector<TString> fullPaths, const std::
 }
 
 
-void getSensitivityMapsProcesses(const std::vector<TString>& fullPaths, const std::string treeName, const std::string gantryName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels, const std::string outputDir)
+/*
+void getSensitivityMapsProcesses(const std::vector<TString>& fullPaths, const std::string& treeName, const std::string& gantryName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels, const std::string& outputDir)
 {
     int maxProcesses = 128;
     std::vector<pid_t> children;
@@ -1061,23 +1041,7 @@ void getSensitivityMapsProcesses(const std::vector<TString>& fullPaths, const st
     int status;
     while (wait(&status) > 0);
 }
-
-
-//~ std::string getBasename(const char* dirPath) {
-	//~ // Cast to string
-	//~ std::string basename(dirPath);
-	
-	//~ // Remove trailing slash if present
-    //~ if (!basename.empty() && basename.back() == '/')
-        //~ basename.pop_back();  
-    
-    //~ //
-	//~ size_t pos = basename.find_last_of('/');
-	//~ if (pos != std::string::npos)
-		//~ basename = basename.substr(pos + 1);
-	
-	//~ return basename;
-//~ }
+*/
 
 
 void printTH3D(TH3D* h) {
@@ -1104,7 +1068,7 @@ void printTH3D(TH3D* h) {
 }
 
 
-TH3D* getHist(const TString fullPath) {
+TH3D* getHist(const TString& fullPath) {
 	TFile f(fullPath, "READ");
 	std::filesystem::path fullPathFS(fullPath.Data());
 	//std::cout << fullPathFS.filename() << std::endl;
@@ -1116,7 +1080,7 @@ TH3D* getHist(const TString fullPath) {
 }
 
 
-void mergeAllSensitivityMaps(const std::string outputDir, const std::string fileName) {
+void mergeAllSensitivityMaps(const std::string& outputDir, const std::string& fileName) {
 	// Get list of .root files
 	TSystemDirectory dir("dir", outputDir.c_str());
 	TList* files = dir.GetListOfFiles();
@@ -1157,7 +1121,7 @@ void mergeAllSensitivityMaps(const std::string outputDir, const std::string file
 }
 
 
-void processOneOutputDirectory(const std::filesystem::path outputBaseDir, const std::string dirPath, const std::string gantryName, const std::string treeName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels) {
+void processOneOutputDirectory(const std::filesystem::path& outputBaseDir, const std::string& dirPath, const std::string& gantryName, const std::string& treeName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels) {
 	// Get list of .root files
 	TSystemDirectory dir("dir", dirPath.c_str());
 	TList* files = dir.GetListOfFiles();
@@ -1200,7 +1164,7 @@ void processOneOutputDirectory(const std::filesystem::path outputBaseDir, const 
 	std::string mergedOutputName = gantryName + "_" + std::to_string((int)std::round(spacing[0])) + "_" + std::to_string((int)std::round(spacing[1])) + "_" + std::to_string((int)std::round(spacing[2]));
 	//std::cout << mergedOutputName << std::endl;
 	
-	/*
+
 	// Run sequentially
 	for (unsigned int ii = 0; ii < fullPaths.size(); ii++) {
 		//std::cout << fullPaths[ii] << std::endl;
@@ -1209,7 +1173,7 @@ void processOneOutputDirectory(const std::filesystem::path outputBaseDir, const 
 		h_map->SaveAs((outputDir.string() + "/" + gSystem->BaseName(fullPaths[ii])).c_str());
 		delete h_map;
 	}
-	*/
+
 	
 	/*
 	// Run in parallel with ROOT thread pool: TTree has internal locks
@@ -1224,6 +1188,8 @@ void processOneOutputDirectory(const std::filesystem::path outputBaseDir, const 
 	}
 	h_maps.clear();
 	*/
+
+
 	
 	// Run in parallel with separate processes
 	getSensitivityMapsProcesses(fullPaths, treeName, gantryName, mapCenter, mapHalfSize, nVoxels, outputDir.string());
@@ -1271,10 +1237,12 @@ int main(int argc, char* argv[]) {
 	const std::string treeName = "MergedCoincidences";
 	
 	// Choose gantry
-	//std::string gantryName = "Comb.";
+	std::string gantryName = "Comb.";
 	//std::string gantryName = "TB-TB";
 	//std::string gantryName = "TB-BI";
-	std::string gantryName = "BI-BI";
+	//std::string gantryName = "BI-BI";
+
+	// some change
 	
 	// For the output directory
 	std::filesystem::path simulationsBasePathFS(simulationsBasePath);
