@@ -19,32 +19,35 @@ std::vector<int> g_nVoxels;
 void processSingleFile(const size_t idx) {
     std::cout << "Processing: " << g_fullPaths[idx] << std::endl;
 
-    TFile* file = getTFile(g_fullPaths[idx], "READ", g_verbose);
+    TFile* file = getTFile(g_fullPaths[idx], "UPDATE", g_verbose);
     TTree* tree = getTTree(file, g_treeName, g_verbose);
 
-    // Filename for output
-    std::vector<TString> fullPathSeparated = separatePath(g_fullPaths[idx]);
-    size_t nSep = fullPathSeparated.size();
-    TString baseName = fullPathSeparated[nSep - 1].Remove(fullPathSeparated[nSep - 1].Last('.'));
-    TString outputPath = g_outputPath + fullPathSeparated[nSep - 3] + "/" + fullPathSeparated[nSep - 2] + "/";
-    std::cout << outputPath << std::endl;
-    if (gSystem->AccessPathName(outputPath)) {gSystem->mkdir(outputPath, true);}
+    TString fileName = gSystem->BaseName(g_fullPaths[idx]);
+    fileName.Remove(fileName.Last('.'));
+
+    if (gSystem->AccessPathName(g_outputPath)) {gSystem->mkdir(g_outputPath, true);}
 
     // Allocate the output arrays
-    TH3D* h_TBTB = new TH3D(baseName + "_TBTB", "Counts",
+    TH3D* h_TBTB = new TH3D(fileName + "_TBTB", "Counts",
                        g_nVoxels[0], g_mapCenter[0] - g_mapHalfSize[0], g_mapCenter[0] + g_mapHalfSize[0],
                        g_nVoxels[1], g_mapCenter[1] - g_mapHalfSize[1], g_mapCenter[1] + g_mapHalfSize[1],
                        g_nVoxels[2], g_mapCenter[2] - g_mapHalfSize[2], g_mapCenter[2] + g_mapHalfSize[2]);
 
-    TH3D* h_TBBI = new TH3D(baseName + "_TBBI", "Counts",
+    TH3D* h_TBBI = new TH3D(fileName + "_TBBI", "Counts",
                        g_nVoxels[0], g_mapCenter[0] - g_mapHalfSize[0], g_mapCenter[0] + g_mapHalfSize[0],
                        g_nVoxels[1], g_mapCenter[1] - g_mapHalfSize[1], g_mapCenter[1] + g_mapHalfSize[1],
                        g_nVoxels[2], g_mapCenter[2] - g_mapHalfSize[2], g_mapCenter[2] + g_mapHalfSize[2]);
 
-    TH3D* h_BIBI = new TH3D(baseName + "_BIBI", "Counts",
+    TH3D* h_BIBI = new TH3D(fileName + "_BIBI", "Counts",
                        g_nVoxels[0], g_mapCenter[0] - g_mapHalfSize[0], g_mapCenter[0] + g_mapHalfSize[0],
                        g_nVoxels[1], g_mapCenter[1] - g_mapHalfSize[1], g_mapCenter[1] + g_mapHalfSize[1],
                        g_nVoxels[2], g_mapCenter[2] - g_mapHalfSize[2], g_mapCenter[2] + g_mapHalfSize[2]);
+
+    // Add boolean branch for the preselection
+    Bool_t selection;
+    TBranch* b = tree->Branch("selection", &selection, "selection/O");
+    // selectBasedOnTime(tree, selection, b, g_verbose);
+    selectBasedOnEnergy(tree, selection, b, g_verbose);
 
     TLeaf* trueness = tree->GetLeaf("trueness");
 
@@ -66,7 +69,9 @@ void processSingleFile(const size_t idx) {
         tree->GetEntry(ii);
         bool aboveEnergyThreshold = (energy1->GetValue() > .2) && (energy2->GetValue() > .2);  // both above 200 keV
 
-        if (trueness->GetValue() && aboveEnergyThreshold) {
+        // if (trueness->GetValue() && aboveEnergyThreshold) {
+        if (selection && aboveEnergyThreshold) {
+        // if (selection && trueness->GetValue() && aboveEnergyThreshold) {
             if ((gantryID1->GetValue() < 2) && (gantryID2->GetValue() < 2)) {
                 h_TBTB->Fill(sourcePosX1->GetValue(), sourcePosY1->GetValue(), sourcePosZ1->GetValue());
             } else if (((gantryID1->GetValue() < 2) && (gantryID2->GetValue() == 2)) || ((gantryID1->GetValue() == 2) && (gantryID2->GetValue() < 2))) {
@@ -77,15 +82,54 @@ void processSingleFile(const size_t idx) {
         }
     }
 
-    h_TBTB->SaveAs(outputPath + baseName + "_TBTB.root");
-    h_TBBI->SaveAs(outputPath + baseName + "_TBBI.root");
-    h_BIBI->SaveAs(outputPath + baseName + "_BIBI.root");
+    h_TBTB->SaveAs(g_outputPath + fileName + "_TBTB.root");
+    h_TBBI->SaveAs(g_outputPath + fileName + "_TBBI.root");
+    h_BIBI->SaveAs(g_outputPath + fileName + "_BIBI.root");
 
     delete h_TBTB;
+    delete h_TBBI;
+    delete h_BIBI;
 
     file->Close();
-    std::exit(1);
 }
+
+
+
+TH3D* getHist(const TString& fileName) {
+    TFile* file = TFile::Open(g_outputPath +  fileName + ".root", "READ");
+    TH3D* hist = (TH3D*)file->Get(fileName);
+    hist->SetDirectory(nullptr);  // detach from file
+    file->Close();
+    delete file;
+    gSystem->Unlink(g_outputPath +  fileName + ".root");
+    return hist;
+}
+
+
+
+void mergeHists(const TString& type) {
+    TString firstFileName = gSystem->BaseName(g_fullPaths[0]);
+    firstFileName.Remove(firstFileName.Last('.'));
+
+    TH3D* firstHist = getHist(firstFileName + "_" + type);
+
+    for (unsigned int ii = 1; ii < g_fullPaths.size(); ii++) {
+        TString fileName = gSystem->BaseName(g_fullPaths[ii]);
+        fileName.Remove(fileName.Last('.'));
+
+        TH3D* hist = getHist(fileName + "_" + type);
+        firstHist->Add(hist);
+        delete hist;
+    }
+    firstHist->SetName("TH3");
+    // firstHist->SaveAs(g_outputPath + type + "_true.root");
+    // firstHist->SaveAs(g_outputPath + type + "_time.root");
+    firstHist->SaveAs(g_outputPath + type + "_energy.root");
+    // firstHist->SaveAs(g_outputPath + type + "_time_true.root");
+    // firstHist->SaveAs(g_outputPath + type + "_energy_true.root");
+    delete firstHist;
+}
+
 
 
 int main(int argc, char* argv[]) {
@@ -98,17 +142,25 @@ int main(int argc, char* argv[]) {
     //printf("Path: %s\n", path);
 
     // Set globals
-    g_verbose = true;
+    g_verbose = false;
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
-    g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";
+    g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
+
+    // Adapt the same folder structure (last two folders) from the input
+    std::vector<TString> pathSplit = splitPath(path);
+    g_outputPath += pathSplit[pathSplit.size() - 2] + "/" + pathSplit[pathSplit.size() - 1] + "/";
 
     g_mapCenter = {0., 0., 0.};  // mm
     g_mapHalfSize = {0.5, 0.5, 1270.};  // mm
     g_nVoxels = {1, 1, 2540};  // 1×1×1 mm spacing
 
-    runSequentially(g_fullPaths.size(), processSingleFile);
-    //runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
+    // runSequentially(g_fullPaths.size(), processSingleFile);
+    runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
+
+    mergeHists("TBTB");
+    mergeHists("TBBI");
+    mergeHists("BIBI");
 
 
     // make the sensitivity map

@@ -27,4 +27,8 @@ void runScatterTest(TTree* tree,
 
 void coincidenceGrouping(TTree* tree, Int_t& groupID, TBranch* b0, Int_t& groupEventID1, TBranch* b1, Int_t& groupEventID2, TBranch* b2, bool verbose = false);
 
+std::vector<Long64_t> getGroupEdges(TTree* tree);
+void selectBasedOnTime(TTree* tree, Bool_t& selection, TBranch* b, bool verbose);
+void selectBasedOnEnergy(TTree* tree, Bool_t& selection, TBranch* b, bool verbose);
+
 #endif //EVENTSELECTION_H

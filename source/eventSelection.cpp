@@ -2,6 +2,9 @@
 
 #include <iostream>
 #include <iomanip>
+#include <set>
+#include <algorithm>
+#include <numeric>
 #include <TApplication.h>
 #include <TCanvas.h>
 #include <TLine.h>
@@ -19,7 +22,6 @@ void identifyTrueEvents(TTree *tree, Bool_t& bBool, TBranch* b) {
 
 	TLeaf* comptonPhantom1 = tree->GetLeaf("comptonPhantom1");
 	TLeaf* comptonPhantom2 = tree->GetLeaf("comptonPhantom2");
-
 	TLeaf* rayleighPhantom1 = tree->GetLeaf("RayleighPhantom1");
 	TLeaf* rayleighPhantom2 = tree->GetLeaf("RayleighPhantom2");
 
@@ -393,5 +395,133 @@ void coincidenceGrouping(TTree* tree, Int_t& groupID, TBranch* b0, Int_t& groupE
 		histMultiplicity->SetStats(0);
 
 		app.Run();
+	}
+}
+
+
+
+std::vector<Long64_t> getGroupEdges(TTree* tree) {
+	Long64_t nEntries = tree->GetEntries();
+	TLeaf* groupID = tree->GetLeaf("groupID");
+
+	std::vector<Long64_t> groupEdges;
+	groupEdges.reserve(nEntries);
+	groupEdges.push_back(0);
+
+	Long64_t previousGroupID = 0;
+	for (Long64_t jj = 1; jj < nEntries; ++jj) {
+		tree->GetEntry(jj);
+		if (groupID->GetValue() - previousGroupID > 0) {
+			groupEdges.push_back(jj);
+		}
+		previousGroupID = groupID->GetValue();
+	}
+
+	groupEdges.push_back(nEntries);
+
+	return groupEdges;
+}
+
+
+
+void selectBasedOnTime(TTree* tree, Bool_t& selection, TBranch* b, const bool verbose) {
+
+	const std::vector<Long64_t> groupEdges = getGroupEdges(tree);
+
+	TLeaf* groupEventID1 = tree->GetLeaf("groupEventID1");
+	TLeaf* groupEventID2 = tree->GetLeaf("groupEventID2");
+
+	// std::vector<bool> selection(idx1.size(), false);
+
+	for (Long64_t jj = 0; jj < groupEdges.size() - 1; jj++){
+		if (verbose) {std::cout << groupEdges[jj] << " " << groupEdges[jj + 1] << std::endl;}
+
+		std::set<Long64_t> usedEvents;
+		for (Long64_t kk = groupEdges[jj]; kk < groupEdges[jj + 1]; kk++) {
+			tree->GetEntry(kk);
+			if (verbose) {std::cout << groupEventID1->GetValue() << " " << groupEventID2->GetValue() << " ";}
+
+			// if (usedEvents.count(groupEventID1->GetValue()) || usedEvents.count(groupEventID2->GetValue())) {
+			if (usedEvents.count(groupEventID1->GetValue()) || usedEvents.count(groupEventID2->GetValue()) || usedEvents.size() > 0) {  // only choose one coincidence
+				if (verbose) {std::cout << std::endl;}
+				selection = false;
+				b->Fill();
+				continue;
+			}
+
+			if (verbose) {std::cout << "*" << std::endl;}
+
+			selection = true;
+			b->Fill();
+			usedEvents.insert(groupEventID1->GetValue());
+			usedEvents.insert(groupEventID2->GetValue());
+
+		}
+		if (verbose) {std::cout << std::endl;}
+	}
+}
+
+
+
+void selectBasedOnEnergy(TTree* tree, Bool_t& selection, TBranch* b, const bool verbose) {
+
+	const std::vector<Long64_t> groupEdges = getGroupEdges(tree);
+
+	TLeaf* energy1 = tree->GetLeaf("energy1");
+	TLeaf* energy2 = tree->GetLeaf("energy2");
+
+	TLeaf* groupEventID1 = tree->GetLeaf("groupEventID1");
+	TLeaf* groupEventID2 = tree->GetLeaf("groupEventID2");
+
+	for (Long64_t jj = 0; jj < groupEdges.size() - 1; jj++){
+		if (verbose) {std::cout << groupEdges[jj] << " " << groupEdges[jj + 1] << std::endl;}
+
+		// Cache total energy
+		std::vector<float> totalEnergies;
+		totalEnergies.reserve(groupEdges[jj+1] - groupEdges[jj]);
+		for (Long64_t kk = groupEdges[jj]; kk < groupEdges[jj + 1]; ++kk) {
+			tree->GetEntry(kk);
+			totalEnergies.push_back(energy1->GetValue() + energy2->GetValue());
+		}
+
+		// Arg-sort based on the energy
+		std::vector<Long64_t> indices(groupEdges[jj + 1] - groupEdges[jj]);
+		std::iota(indices.begin(), indices.end(), 0);
+		std::sort(indices.begin(), indices.end(), [&](std::size_t aa, std::size_t bb) {return totalEnergies[aa] > totalEnergies[bb];});
+
+		// The branch can only be written sequentially; first need to figure out the order
+		std::vector<Bool_t> selectionGroup(groupEdges[jj + 1] - groupEdges[jj]);
+
+		// Processing out of order
+		std::set<Long64_t> usedEvents;
+		for (Long64_t kk = 0; kk < indices.size(); kk++) {
+			// int sortedGroupIndex = sortedGroupIndices[ll];
+			tree->GetEntry(groupEdges[jj] + indices[kk]);
+			if (verbose) {std::cout << groupEventID1->GetValue() << " " << groupEventID2->GetValue() << " " << energy1->GetValue() + energy2->GetValue() << " ";}
+
+			//if (usedEvents.count(groupEventID1->GetValue()) || usedEvents.count(groupEventID2->GetValue())) {
+			if (usedEvents.count(groupEventID1->GetValue()) || usedEvents.count(groupEventID2->GetValue()) || usedEvents.size() > 0) {  // only choose one coincidence
+				if (verbose) {std::cout << std::endl;}
+				selectionGroup[indices[kk]] = false;
+				// selection = false;
+				// b->Fill();
+				continue;
+			}
+
+			if (verbose) {std::cout << "*" << std::endl;}
+
+			selectionGroup[indices[kk]] = true;
+			// selection = true;
+			// b->Fill();
+			usedEvents.insert(groupEventID1->GetValue());
+			usedEvents.insert(groupEventID2->GetValue());
+		}
+		if (verbose) {std::cout << std::endl;}
+
+		// Fill in order
+		for (Long64_t kk = 0; kk < selectionGroup.size(); kk++) {
+			selection = selectionGroup[kk];
+			b->Fill();
+		}
 	}
 }

@@ -35,6 +35,6 @@ TH1D* getHistogram(std::vector<T>& arr, const float lowerEdge, const float binWi
     return hist;
 }
 
-std::vector<TString> separatePath(const TString& path);
+std::vector<TString> splitPath(const TString& path);
 
 #endif //UTILS_H

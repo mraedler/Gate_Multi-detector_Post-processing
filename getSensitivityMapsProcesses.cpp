@@ -709,7 +709,7 @@ void plotGroupStatistics(const std::vector<Long64_t>& groupEdges, std::vector<Lo
 }
 */
 
-
+/*
 std::vector<bool> selectBasedOnTime(const std::vector<Long64_t>& groupEdges, const std::vector<Long64_t>& idx1, const std::vector<Long64_t>& idx2, const bool verbose) {
 	std::vector<bool> selection(idx1.size(), false);
 	
@@ -738,9 +738,9 @@ std::vector<bool> selectBasedOnTime(const std::vector<Long64_t>& groupEdges, con
 	
 	return selection;
 }
+*/
 
-
-
+/*
 std::vector<bool> selectBasedOnEnergy(const std::vector<Long64_t>& groupEdges, const std::vector<Long64_t>& idx1, const std::vector<Long64_t>& idx2, const std::vector<float>& energy1, const std::vector<float>& energy2, const bool verbose) {
 	std::vector<bool> selection(idx1.size(), false);
 	
@@ -778,7 +778,7 @@ std::vector<bool> selectBasedOnEnergy(const std::vector<Long64_t>& groupEdges, c
 	
 	return selection;
 }
-
+*/
 
 
 std::vector<bool> resetSelectionVector(const std::vector<bool>& selectionDense, const std::vector<bool>& selectionSparse) {
@@ -1068,6 +1068,7 @@ void printTH3D(TH3D* h) {
 }
 
 
+/*
 TH3D* getHist(const TString& fullPath) {
 	TFile f(fullPath, "READ");
 	std::filesystem::path fullPathFS(fullPath.Data());
@@ -1078,8 +1079,9 @@ TH3D* getHist(const TString& fullPath) {
 	std::filesystem::remove(fullPathFS);
 	return h;
 }
+*/
 
-
+/*
 void mergeAllSensitivityMaps(const std::string& outputDir, const std::string& fileName) {
 	// Get list of .root files
 	TSystemDirectory dir("dir", outputDir.c_str());
@@ -1119,6 +1121,7 @@ void mergeAllSensitivityMaps(const std::string& outputDir, const std::string& fi
 	h_merged->SetName("TH3");
 	h_merged->SaveAs((outputDir + "/" + fileName + "_true_energy.root").c_str());
 }
+*/
 
 
 void processOneOutputDirectory(const std::filesystem::path& outputBaseDir, const std::string& dirPath, const std::string& gantryName, const std::string& treeName, const std::vector<double>& mapCenter, const std::vector<double>& mapHalfSize, const std::vector<int>& nVoxels) {

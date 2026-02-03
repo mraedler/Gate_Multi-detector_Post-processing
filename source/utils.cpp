@@ -172,7 +172,7 @@ std::vector<TString> getListOfRootFilePaths(const char* dirPath, const bool verb
 
 
 
-std::vector<TString> separatePath(const TString& path) {
+std::vector<TString> splitPath(const TString& path) {
     TObjArray* parts = path.Tokenize("/");
 
     // directories (excluding filename)
