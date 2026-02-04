@@ -24,7 +24,7 @@ std::vector<LutEntry> readLutBinary(const char* filePath);
 
 ScannerParams totalBodyJPETWithBrainInsert_4_18();
 
-std::vector<int> getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID);
-void checkCastorID(TTree* tree, const TLeaf* gantryID, const  TLeaf* globalPosX, const TLeaf* globalPosY, const TLeaf* globalPosZ, const std::vector<int>& castorIDs, const std::vector<LutEntry>& lut);
+void getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b);
+void checkCastorID(TTree* tree, const TLeaf* gantryID, const  TLeaf* globalPosX, const TLeaf* globalPosY, const TLeaf* globalPosZ, Int_t& castorID, const std::vector<LutEntry>& lut);
 
 #endif //CASTORTOOLS_H

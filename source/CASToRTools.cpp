@@ -52,7 +52,7 @@ ScannerParams totalBodyJPETWithBrainInsert_4_18()
 
 
 
-std::vector<int> getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID) {
+void getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b) {
 	// Get the scanner parameters
 	const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
 
@@ -92,7 +92,7 @@ std::vector<int> getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rs
 	// Long64_t nEntries = tree->GetEntries() / 100;
 
 	// Allocate the output vector
-	std::vector<int> castorIDs(nEntries);
+	// std::vector<int> castorIDs(nEntries);
 
 	for (Long64_t ii = 0; ii < nEntries; ++ii) {
 		tree->GetEntry(ii);
@@ -126,44 +126,39 @@ std::vector<int> getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rs
 		// with indices (i0, i1, i2, i3) = (layerNumber, crystalID, rsectorID, layerIdx)
 		// and shape (d0, d1, d2, d3) depending on the gantry
 		// flat_idx = ((i0 ∗ d1 + i1) ∗ d2 + i2) ∗ d3 + i3
-		castorIDs[ii] = ((layerNumber * sp.gantryShape[gID][1] + crystalID->GetValue()) * sp.gantryShape[gID][2] + rsectorID->GetValue()) * layerEntries[gID] + layerIdx + shift[gID];
+		castorID = ((layerNumber * sp.gantryShape[gID][1] + crystalID->GetValue()) * sp.gantryShape[gID][2] + rsectorID->GetValue()) * layerEntries[gID] + layerIdx + shift[gID];
+		b->Fill();
 	}
-
-    return castorIDs;
 }
 
 
 
-void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, const TLeaf* globalPosY, const TLeaf* globalPosZ, const std::vector<int>& castorIDs, const std::vector<LutEntry>& lut) {
+void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, const TLeaf* globalPosY, const TLeaf* globalPosZ, Int_t& castorID, const std::vector<LutEntry>& lut) {
 	const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
 	int nGantries = sp.gantryShape.size();
-
-	//
-	float v_x, v_y, lut_depth, lut_lateral, depth, lateral;
 
 	//
 	std::vector<std::vector<float>> depthDeviation(nGantries);
 	std::vector<std::vector<float>> lateralDeviation(nGantries);
 	std::vector<std::vector<float>> longitudinalDeviation(nGantries);
 
-	for (Long64_t ii = 0; ii < castorIDs.size(); ++ii) {
+	Long64_t nEntries = tree->GetEntries();
+	for (Long64_t ii = 0; ii < nEntries; ++ii) {
 		tree->GetEntry(ii);
 
 		int gID = gantryID->GetValue();
-		int castorID = castorIDs[ii];
 
-		//
-		v_x = lut[castorID].OrVx;
-		v_y = lut[castorID].OrVy;
-		lut_depth   = lut[castorID].Posx * v_x + lut[castorID].Posy * v_y;
-		lut_lateral = lut[castorID].Posx * v_y - lut[castorID].Posy * v_x;
-		depth   = globalPosX->GetValue() * v_x + globalPosY->GetValue() * v_y;
-		lateral = globalPosX->GetValue() * v_y - globalPosY->GetValue() * v_x;
+		// Rotate
+		float v_x = lut[castorID].OrVx;
+		float v_y = lut[castorID].OrVy;
+		float lut_depth   = lut[castorID].Posx * v_x + lut[castorID].Posy * v_y;
+		float lut_lateral = lut[castorID].Posx * v_y - lut[castorID].Posy * v_x;
+		float depth   = globalPosX->GetValue() * v_x + globalPosY->GetValue() * v_y;
+		float lateral = globalPosX->GetValue() * v_y - globalPosY->GetValue() * v_x;
 
 		depthDeviation[gID].push_back(depth - lut_depth);
 		lateralDeviation[gID].push_back(lateral - lut_lateral);
 		longitudinalDeviation[gID].push_back(globalPosZ->GetValue() - lut[castorID].Posz);
-
 	}
 
 	// Visualize and check consistency
