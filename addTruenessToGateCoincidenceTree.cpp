@@ -1,7 +1,6 @@
 #include <iostream>
 #include <TFile.h>
 #include "include/utils.h"
-// #include "include/CASToRTools.h"
 #include "include/eventSelection.h"
 
 // Globals
@@ -17,7 +16,10 @@ void processSingleRootFile(const size_t idx) {
     TFile* file = getTFile(g_fullPaths[idx], "UPDATE", g_verbose);
     TTree* tree = getTTree(file, g_treeName, g_verbose);
 
-    checkIfLeafAlreadyExists(tree, "trueness");
+    if (checkIfLeafExists(tree, "trueness")) {
+        std::cerr << "Error: trueness leaf already exists." << std::endl;
+        std::exit(1);
+    }
 
     // Add boolean branch for the preselection
     Bool_t trueness;

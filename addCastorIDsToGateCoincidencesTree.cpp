@@ -12,12 +12,16 @@ std::vector<LutEntry> g_lut;
 
 
 void processSingleFile(const size_t idx) {
+    // todo for checkCastorID: Count elements outside of the histogram and warn accordingly
     std::cout << "Processing: " << g_fullPaths[idx] << std::endl;
 
     TFile* file = getTFile(g_fullPaths[idx], "UPDATE", g_verbose);
     TTree* tree = getTTree(file, g_treeName, g_verbose);
 
-    checkIfLeafAlreadyExists(tree, "castorID");
+    if (checkIfLeafExists(tree, "castorID")) {
+        std::cerr << "Error: leaf(s) starting with castorID already exist." << std::endl;
+        std::exit(1);
+    }
 
     Int_t castorID1, castorID2;
     TBranch* b1 = tree->Branch("castorID1", &castorID1, "castorID1/I");

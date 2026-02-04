@@ -47,22 +47,19 @@ void listAvailableLeaves(TTree* tree) {
 
 
 
-void checkIfLeafAlreadyExists(TTree* tree, const std::string& checkLeafName) {
-    bool leafAlreadyExists = false;
+bool checkIfLeafExists(TTree* tree, const std::string& checkLeafName) {
+    bool leafExists = false;
     TObjArray* leaves = tree->GetListOfLeaves();
     for (int ii = 0; ii < leaves->GetEntries(); ++ii) {
         std::string leafName(leaves->At(ii)->GetName());
 
         if (leafName.compare(0, checkLeafName.length(), checkLeafName) == 0) {
-            std::cout << "Found leaf: " << leafName << std::endl;
-            leafAlreadyExists = true;
+            //std::cout << "Found leaf: " << leafName << std::endl;
+            leafExists = true;
         }
     }
 
-    if (leafAlreadyExists) {
-        std::cerr << "Error: leaf(s) starting with '" << checkLeafName << "' already exist." << std::endl;
-        std::exit(1);
-    }
+    return leafExists;
 }
 
 

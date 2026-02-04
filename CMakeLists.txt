@@ -45,6 +45,9 @@ target_link_libraries(groupCoincidences PRIVATE core)
 add_executable(getSensitivityMap getSensitivityMap.cpp)
 target_link_libraries(getSensitivityMap PRIVATE core)
 
-add_executable(processRootFiles getSensitivityMapsProcesses.cpp)
-target_link_libraries(processRootFiles PRIVATE core)
+#add_executable(processRootFiles getSensitivityMapsProcesses.cpp)
+#target_link_libraries(processRootFiles PRIVATE core)
+
+add_executable(convertGateCoincidencesToCastorInterfile convertGateCoincidencesToCastorInterfile.cpp)
+target_link_libraries(convertGateCoincidencesToCastorInterfile PRIVATE core)
 

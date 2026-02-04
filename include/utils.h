@@ -14,7 +14,7 @@ class TFile;
 void listAvailableTrees(const TFile* file);
 void listAvailableBranches(TTree* tree);
 void listAvailableLeaves(TTree* tree);
-void checkIfLeafAlreadyExists(TTree* tree, const std::string& checkLeafName);
+bool checkIfLeafExists(TTree* tree, const std::string& checkLeafName);
 
 std::vector<TString> getListOfRootFilePaths(const char* dirPath, bool verbose = false);
 

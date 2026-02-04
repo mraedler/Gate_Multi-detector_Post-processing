@@ -9,6 +9,8 @@
 #include <TApplication.h>
 #include <TCanvas.h>
 
+double g_FWHM_sigma_conversion = 2.0 * std::sqrt(2.0 * std::log(2.0));
+
 std::vector<LutEntry> readLutBinary(const char* filePath)
 {
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
@@ -33,21 +35,38 @@ std::vector<LutEntry> readLutBinary(const char* filePath)
 
 ScannerParams totalBodyJPETWithBrainInsert_4_18()
 {
-	const double FWHM_sigma_conversion = 2.0 * std::sqrt(2.0 * std::log(2.0));
-
 	return {
-	        {
-		        {2, 2, 24, 16, 330},
-				{2, 3, 24, 16, 600},
-				{2, 1, 12, 16, 330}
-	        },
-			{
-	            {0.0, 6.0 / FWHM_sigma_conversion},
-				{0.0, 6.0 / FWHM_sigma_conversion},
-				{0.0, 4.0 / FWHM_sigma_conversion}
-			},
-			1.0
-		};
+		        {
+			        {2, 2, 24, 16, 330},
+					{2, 3, 24, 16, 600},
+					{2, 1, 12, 16, 330}
+		        },
+				{
+		            {0.0, 6.0 / g_FWHM_sigma_conversion},
+					{0.0, 6.0 / g_FWHM_sigma_conversion},
+					{0.0, 4.0 / g_FWHM_sigma_conversion}
+				},
+				1.0
+			};
+}
+
+
+
+ScannerParams totalBodyJPETWithBrainInsert_6_30()
+{
+	return {
+		        {
+			        {2, 2, 24, 16, 330},
+					{2, 3, 24, 16, 600},
+					{2, 1, 12, 11, 330}
+		        },
+				{
+		            {0.0, 6.0 / g_FWHM_sigma_conversion},
+					{0.0, 6.0 / g_FWHM_sigma_conversion},
+					{0.0, 6.0 / g_FWHM_sigma_conversion}
+				},
+				1.0
+			};
 }
 
 
@@ -185,4 +204,26 @@ void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, 
 	}
 	app.Run();
 
+}
+
+
+
+std::vector<CdfEntry> readCdfFile(const TString& filename) {
+	std::ifstream in(filename, std::ios::binary);
+	if (!in) {throw std::runtime_error("Cannot open file: " + filename);}
+
+	// Determine file size
+	in.seekg(0, std::ios::end);
+	std::streamsize fileSize = in.tellg();
+	in.seekg(0, std::ios::beg);
+
+	if (fileSize % sizeof(CdfEntry) != 0) {throw std::runtime_error("File size is not a multiple of CdfEntry size");}
+
+	size_t nEntries = fileSize / sizeof(CdfEntry);
+
+	std::vector<CdfEntry> data(nEntries);
+
+	if (!in.read(reinterpret_cast<char*>(data.data()), fileSize)) {throw std::runtime_error("Error reading file: " + filename);}
+
+	return data;
 }
