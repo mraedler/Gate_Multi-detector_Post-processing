@@ -16,7 +16,12 @@ void processSingleRootFile(const size_t idx) {
     TFile* file = getTFile(g_fullPaths[idx], "UPDATE", g_verbose);
     TTree* tree = getTTree(file, g_treeName, g_verbose);
 
-    checkIfLeafAlreadyExists(tree, "group");
+    if (!checkIfLeafExists(tree, "trueness")) {
+        std::cerr << "Error: trueness leaf missing." << std::endl;
+        std::exit(1);
+    }
+
+    checkIfLeafExists(tree, "group");
 
     Int_t groupID, groupEventID1, groupEventID2;
     TBranch* b0 = tree->Branch("groupID", &groupID, "groupID/I");

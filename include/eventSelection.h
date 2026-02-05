@@ -7,6 +7,8 @@
 
 void identifyTrueEvents(TTree* tree, Bool_t& bBool, TBranch* b);
 
+void setScatterTest(TTree* tree, Int_t& castorID1, Int_t& castorID2, std::vector<LutEntry>& lut, Double_t& scatterTest, TBranch* b, bool verbose);
+
 void runMinSectorDifferenceTest(TTree* tree,
     const TLeaf* gantryID1, const TLeaf* gantryID2,
     const TLeaf* rsectorID1, const TLeaf* rsectorID2,

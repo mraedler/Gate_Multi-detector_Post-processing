@@ -10,6 +10,7 @@
 #include <TLine.h>
 
 
+
 void identifyTrueEvents(TTree *tree, Bool_t& bBool, TBranch* b) {
 
 	TLeaf* eventID1 = tree->GetLeaf("eventID1");
@@ -48,6 +49,59 @@ void identifyTrueEvents(TTree *tree, Bool_t& bBool, TBranch* b) {
 		  << std::fixed << std::setprecision(2)
 		  << (passingPercentage / nEntries * 100)
 		  << " %.\n\n";
+}
+
+
+
+void setScatterTest(TTree* tree, Int_t& castorID1, Int_t& castorID2, std::vector<LutEntry>& lut, Double_t& scatterTest, TBranch* b, const bool verbose) {
+	double speedOfLight = 2.99792458e11;  // [mm / s]
+
+	TLeaf* time1 = tree->GetLeaf("time1");
+	TLeaf* time2 = tree->GetLeaf("time2");
+
+	TH1D* hist = nullptr;
+	if (verbose) {hist = new TH1D("h", ";Scatter test [cm]; Count", 401, -100.5, 300.5);}
+
+	Long64_t nEntries = tree->GetEntries();
+	for (Long64_t ii = 0; ii < nEntries; ++ii) {
+		tree->GetEntry(ii);
+
+		int cID1 = castorID1;
+		int cID2 = castorID2;
+
+		double t1 = time1->GetValue();
+		double t2 = time2->GetValue();
+
+		float x1 = lut[cID1].Posx;
+		float y1 = lut[cID1].Posy;
+		float z1 = lut[cID1].Posz;
+
+		float x2 = lut[cID2].Posx;
+		float y2 = lut[cID2].Posy;
+		float z2 = lut[cID2].Posz;
+
+		double distance = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));  // [mm]
+		scatterTest = (distance - (t2 - t1) * speedOfLight) / 10.;  // [cm]
+		if (verbose) {hist->Fill(scatterTest);}
+		b->Fill();
+	}
+
+	if (verbose) {
+		double binCenterMinimum = findFirstMinimumAfterZero(hist, verbose);
+
+		TApplication app("app", 0, nullptr);
+		TCanvas canvas("c", "c", 800, 600);
+		hist->Draw();
+		hist->SetStats(0);
+
+		canvas.Update();
+		TLine* line = new TLine(binCenterMinimum, gPad->GetUymin(), binCenterMinimum, gPad->GetUymax());
+		line->SetLineColor(kRed);
+		line->SetLineWidth(2);
+		line->Draw("same");
+
+		app.Run();
+	}
 }
 
 

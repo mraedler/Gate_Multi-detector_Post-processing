@@ -30,11 +30,8 @@ target_link_libraries(core
         ROOT::Gpad
 )
 
-add_executable(addCastorIDsToGateCoincidencesTree addCastorIDsToGateCoincidencesTree.cpp)
-target_link_libraries(addCastorIDsToGateCoincidencesTree PRIVATE core)
-
-add_executable(addTruenessToGateCoincidenceTree addTruenessToGateCoincidenceTree.cpp)
-target_link_libraries(addTruenessToGateCoincidenceTree PRIVATE core)
+add_executable(addCoincidenceAttributes addCoincidenceAttributes.cpp)
+target_link_libraries(addCoincidenceAttributes PRIVATE core)
 
 add_executable(runPreselection runPreselection.cpp)
 target_link_libraries(runPreselection PRIVATE core)

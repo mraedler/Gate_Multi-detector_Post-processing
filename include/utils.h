@@ -37,4 +37,11 @@ TH1D* getHistogram(std::vector<T>& arr, const float lowerEdge, const float binWi
 
 std::vector<TString> splitPath(const TString& path);
 
+template <typename Container>
+auto minmax(const Container& c)
+{
+    auto [minIt, maxIt] = std::minmax_element(std::begin(c), std::end(c));
+    return std::make_pair(*minIt, *maxIt);
+}
+
 #endif //UTILS_H

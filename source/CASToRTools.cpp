@@ -2,6 +2,7 @@
 #include "../include/utils.h"
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <random>
 #include <TTree.h>
@@ -71,9 +72,10 @@ ScannerParams totalBodyJPETWithBrainInsert_6_30()
 
 
 
-void getCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b) {
+void setCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b) {
 	// Get the scanner parameters
-	const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
+	// const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
+	const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
 
 	// Set the distributions and the random number generator for the blurring along the axial direction
 	std::vector<std::normal_distribution<>> dists;
@@ -178,6 +180,23 @@ void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, 
 		depthDeviation[gID].push_back(depth - lut_depth);
 		lateralDeviation[gID].push_back(lateral - lut_lateral);
 		longitudinalDeviation[gID].push_back(globalPosZ->GetValue() - lut[castorID].Posz);
+	}
+
+	// Print the min/max deviation
+	std::cout << std::endl;
+	std::cout << std::fixed << std::setprecision(1) << "Min, max deviation [mm]\n=======================" << std::endl;
+	for (int kk = 0; kk < nGantries; ++kk) {
+		std::cout << "Gantry " << kk << "\n--------" << std::endl;
+		auto [minDepthDeviation, maxDepthDeviation] = minmax(depthDeviation[kk]);
+		std::cout << "Depth:        " << minDepthDeviation << ", " << maxDepthDeviation << std::endl;
+
+		auto [minLateralDeviation, maxLateralDeviation] = minmax(lateralDeviation[kk]);
+		std::cout << "Lateral:      " << minLateralDeviation << ", " << maxLateralDeviation << std::endl;
+
+		auto [minLongitudinalDeviation, maxLongitudinalDeviation] = minmax(longitudinalDeviation[kk]);
+		std::cout << "Longitudinal: " << minLongitudinalDeviation << ", " << maxLongitudinalDeviation << std::endl;
+
+		std::cout << std::endl;
 	}
 
 	// Visualize and check consistency

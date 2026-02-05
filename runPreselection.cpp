@@ -43,7 +43,9 @@ void processSingleFile(const size_t idx) {
     TBranch* b = tree->Branch("preselection", &preselection, "preselection/O");
 
     runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, preselection, b, g_minSectorDifference, false);
-    runScatterTest(tree, time1, time2, castorID1, castorID2, gantryID1, gantryID2, trueness, g_lut, preselection, b, false);
+    // std::exit(1);
+    runScatterTest(tree, time1, time2, castorID1, castorID2, gantryID1, gantryID2, trueness, g_lut, preselection, b, true);
+    std::exit(1);
 
     Long64_t nEntries = tree->GetEntries();
     for (Long64_t ii = 0; ii < nEntries; ++ii) {
@@ -79,10 +81,12 @@ int main(int argc, char* argv[]) {
     g_minSectorDifference = 2;
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
-    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_dz_1_mm.lut");
+    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_dz_1_mm.lut");
+    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
+    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm.lut");
 
-    runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
-    //runSequentially(g_fullPaths.size(), processSingleFile);
+    runSequentially(g_fullPaths.size(), processSingleFile);
+    // runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
 
     return 0;
 }
