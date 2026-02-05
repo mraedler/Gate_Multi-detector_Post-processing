@@ -18,14 +18,18 @@ void runMinSectorDifferenceTest(TTree* tree,
 
 double findFirstMinimumAfterZero(TH1D* hist, bool verbose);
 
-void runScatterTest(TTree* tree,
-    const TLeaf* time1, const TLeaf* time2,
-    const TLeaf* castorID1, const TLeaf* castorID2,
+void runScatterTest(TTree* tree, const TLeaf* scatterTest,
     const TLeaf* gantryID1, const TLeaf* gantryID2,
-    const TLeaf* trueness,
-    std::vector<LutEntry>& lut,
-    Bool_t& bBool, TBranch* b,
-    bool verbose);
+    const TLeaf* trueness, Bool_t& bBool, TBranch* b, bool verbose);
+
+// void runScatterTest(TTree* tree,
+//     const TLeaf* time1, const TLeaf* time2,
+//     const TLeaf* castorID1, const TLeaf* castorID2,
+//     const TLeaf* gantryID1, const TLeaf* gantryID2,
+//     const TLeaf* trueness,
+//     std::vector<LutEntry>& lut,
+//     Bool_t& bBool, TBranch* b,
+//     bool verbose);
 
 void coincidenceGrouping(TTree* tree, Int_t& groupID, TBranch* b0, Int_t& groupEventID1, TBranch* b1, Int_t& groupEventID2, TBranch* b2, bool verbose = false);
 

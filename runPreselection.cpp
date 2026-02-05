@@ -19,34 +19,34 @@ void processSingleFile(const size_t idx) {
     TFile* file = getTFile(g_fullPaths[idx], "UPDATE", g_verbose);
     TTree* tree = getTTree(file, g_treeName, g_verbose);
 
-    //
+    if (!checkIfLeafExists(tree, "scatterTest") || !checkIfLeafExists(tree, "trueness")) {
+        std::cerr << "Error: coincidence attributes leafs missing. Run addCoincidenceAttributes first." << std::endl;
+        std::exit(1);
+    }
+
+    // Get necessary leafs
+    // todo: Can also be moved to the respective event selection functions
+    TLeaf* gantryID1 = tree->GetLeaf("gantryID1");
+    TLeaf* gantryID2 = tree->GetLeaf("gantryID2");
+    TLeaf* rsectorID1 = tree->GetLeaf("rsectorID1");
+    TLeaf* rsectorID2 = tree->GetLeaf("rsectorID2");
+    TLeaf* trueness = tree->GetLeaf("trueness");
+    TLeaf* scatterTest = tree->GetLeaf("scatterTest");
+
+    // Add boolean branch for the preselection
+    Bool_t preselection;
+    TBranch* b = tree->Branch("preselection", &preselection, "preselection/O");
+
+    runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, preselection, b, g_minSectorDifference, g_verbose);
+    runScatterTest(tree, scatterTest, gantryID1, gantryID2, trueness, preselection, b, g_verbose);
+
+    // Set up new file containing only the preselected data
     TString newFullPath = g_fullPaths[idx];
     newFullPath.Remove(newFullPath.Last('.'));
     newFullPath += "_new.root";
     TFile* newFile = TFile::Open(newFullPath, "RECREATE");
     //newFile->cd();  // Ensure the new file is linked
     TTree* newTree = tree->CloneTree(0);
-
-    //
-    TLeaf* gantryID1 = tree->GetLeaf("gantryID1");
-    TLeaf* gantryID2 = tree->GetLeaf("gantryID2");
-    TLeaf* rsectorID1 = tree->GetLeaf("rsectorID1");
-    TLeaf* rsectorID2 = tree->GetLeaf("rsectorID2");
-    TLeaf* castorID1 = tree->GetLeaf("castorID1");
-    TLeaf* castorID2 = tree->GetLeaf("castorID2");
-    TLeaf* time1 = tree->GetLeaf("time1");
-    TLeaf* time2 = tree->GetLeaf("time2");
-    TLeaf* trueness = tree->GetLeaf("trueness");
-
-    // Add boolean branch for the preselection
-    Bool_t preselection;
-    TBranch* b = tree->Branch("preselection", &preselection, "preselection/O");
-
-    runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, preselection, b, g_minSectorDifference, false);
-    // std::exit(1);
-    runScatterTest(tree, time1, time2, castorID1, castorID2, gantryID1, gantryID2, trueness, g_lut, preselection, b, true);
-    std::exit(1);
-
     Long64_t nEntries = tree->GetEntries();
     for (Long64_t ii = 0; ii < nEntries; ++ii) {
         tree->GetEntry(ii);
@@ -54,15 +54,14 @@ void processSingleFile(const size_t idx) {
         newTree->Fill();
     }
 
+    std::cout << "Writing: " << newFullPath << std::endl;
+
     newTree->Write();
     newFile->Close();
     file->Close();
 
-    // #include <cstdio>
     std::remove(g_fullPaths[idx]);
     std::rename(newFullPath, g_fullPaths[idx]);  // rename new file
-
-    // std::exit(1);
 }
 
 
@@ -81,12 +80,13 @@ int main(int argc, char* argv[]) {
     g_minSectorDifference = 2;
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
+    // todo: If you change the LUT here, also change in the runMinSectorDifferenceTest (fix this)
     // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_dz_1_mm.lut");
     // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
     g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm.lut");
 
-    runSequentially(g_fullPaths.size(), processSingleFile);
-    // runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
+    // runSequentially(g_fullPaths.size(), processSingleFile);
+    runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
 
     return 0;
 }
