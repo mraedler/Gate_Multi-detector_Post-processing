@@ -12,15 +12,15 @@ void setScatterTest(TTree* tree, Int_t& castorID1, Int_t& castorID2, std::vector
 void runMinSectorDifferenceTest(TTree* tree,
     const TLeaf* gantryID1, const TLeaf* gantryID2,
     const TLeaf* rsectorID1, const TLeaf* rsectorID2,
-    Bool_t& bBool, TBranch* b,
+    Bool_t& passMinSectorDifferenceTest, TBranch* b,
     int minSectorDifference,
     bool verbose);
 
 double findFirstMinimumAfterZero(TH1D* hist, bool verbose);
 
 void runScatterTest(TTree* tree, const TLeaf* scatterTest,
-    const TLeaf* gantryID1, const TLeaf* gantryID2,
-    const TLeaf* trueness, Bool_t& bBool, TBranch* b, bool verbose);
+    const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* trueness,
+    Bool_t& passMinSectorDifferenceTest, Bool_t& passScatterTest, TBranch* b, bool verbose);
 
 // void runScatterTest(TTree* tree,
 //     const TLeaf* time1, const TLeaf* time2,

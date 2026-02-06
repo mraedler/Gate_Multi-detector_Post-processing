@@ -82,6 +82,7 @@ void setScatterTest(TTree* tree, Int_t& castorID1, Int_t& castorID2, std::vector
 
 		double distance = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));  // [mm]
 		scatterTest = (distance - (t2 - t1) * speedOfLight) / 10.;  // [cm]
+
 		if (verbose) {hist->Fill(scatterTest);}
 		b->Fill();
 	}
@@ -106,12 +107,11 @@ void setScatterTest(TTree* tree, Int_t& castorID1, Int_t& castorID2, std::vector
 
 
 
-void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* rsectorID1, const TLeaf* rsectorID2, Bool_t& bBool, TBranch* b, int minSectorDifference, bool verbose) {
-    // const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
-    const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
+void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* rsectorID1, const TLeaf* rsectorID2, Bool_t& passMinSectorDifferenceTest, TBranch* b, int minSectorDifference, bool verbose) {
+    const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
+    // const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
 
-    TH1D* hist = nullptr;
-    if (verbose) {hist = new TH1D("h", ";Sector difference; Count", 15, -2.5, 12.5);}
+    TH1D* hist = new TH1D("Sector difference before selection", ";Sector difference; Count", 15, -2.5, 12.5);
 
     Long64_t nEntries = tree->GetEntries();
 	double passingPercentage = 0;
@@ -131,13 +131,15 @@ void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf
             sectorDifference = std::min(absolute_sector_difference, nSectors - absolute_sector_difference);
         }
 
-        if (verbose) {hist->Fill(sectorDifference);}
+        hist->Fill(sectorDifference);
 
-        if (sectorDifference == -1 or sectorDifference >= minSectorDifference) {bBool = true;}
-        else {bBool = false;}
-		passingPercentage += bBool;
+        if (sectorDifference == -1 or sectorDifference >= minSectorDifference) {passMinSectorDifferenceTest = true;}
+        else {passMinSectorDifferenceTest = false;}
+		passingPercentage += passMinSectorDifferenceTest;
         b->Fill();
     }
+
+	hist->Write();
 
 	std::cout << "Passing percentage after setting a minimum sector difference of "
 			  << minSectorDifference << ": "
@@ -186,46 +188,46 @@ double findFirstMinimumAfterZero(TH1D* hist, bool verbose) {
 
 
 
-void runScatterTest(TTree* tree, const TLeaf* scatterTest, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* trueness, Bool_t& bBool, TBranch* b, bool verbose) {
-	Long64_t nEntries = tree->GetEntries();
-
+void runScatterTest(TTree* tree, const TLeaf* scatterTest, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* trueness, Bool_t& passMinSectorDifferenceTest, Bool_t& passScatterTest, TBranch* b, bool verbose) {
 	// Different thresholds for different gantries
 	// todo: remove hard coding
 	double thresholdTBTB = 25.;  // [cm]
 	double thresholdOther = 10.;  // [cm]
 
-	TH1D* hist = nullptr;
-	if (verbose) {hist = new TH1D("h", ";Scatter test [cm]; Count", 401, -100.5, 300.5);}
+	TH1D* hist = new TH1D("Scatter test before selection", ";Scatter test [cm]; Count", 401, -100.5, 300.5);
 
-	double passingPercentage = 0;
+	Long64_t passingPercentage = 0;
 	double excludedTrue = 0;
 	double trueCounter = 0;
+
+	Long64_t nEntries = tree->GetEntries();
 	for (Long64_t ii = 0; ii < nEntries; ++ii) {
 		tree->GetEntry(ii);
 
 		double st = scatterTest->GetValue();
 
 		// Only include the entries that were not already excluded by the minimum sector difference
-		if (verbose) {if (bBool) hist->Fill(st);}
+		if (passMinSectorDifferenceTest) hist->Fill(st);
 
+		passScatterTest = true;
 		if ((gantryID1->GetValue() < 2) && (gantryID2->GetValue() < 2)) {
-			if (st < thresholdTBTB) {bBool = false;}
+			if (st < thresholdTBTB) {passScatterTest = false;}
 		} else {
-			if (st < thresholdOther) {bBool = false;}
+			if (st < thresholdOther) {passScatterTest = false;}
 		}
+		b->Fill();
 
-		passingPercentage += bBool;
+		passingPercentage += passScatterTest;
 
 		bool t = trueness->GetValue();
 		trueCounter += t;
 
-		if (!bBool && t) {excludedTrue++;}
+		if (!passScatterTest && t) {excludedTrue++;}
 	}
 
-	std::cout << "Passing percentage after additional scatter test: "
-		  << std::fixed << std::setprecision(2)
-		  << (passingPercentage / nEntries * 100)
-		  << " %.\n";
+	hist->Write();
+
+	std::cout << "Passing percentage after additional scatter test: " << (passingPercentage * 100 + nEntries / 2) / nEntries << " %.\n";
 
 	std::cout << "Percentage of excluded true events: "
 	  << std::fixed << std::setprecision(2)
@@ -285,11 +287,9 @@ void coincidenceGrouping(TTree* tree, Int_t& groupID, TBranch* b0, Int_t& groupE
 	// std::vector<Long64_t> groupEdges = {0};
 	// std::vector<Long64_t> groupMultiplicities;
 
-	TH1D* histMultiplicity = nullptr;
-	if (verbose) {histMultiplicity = new TH1D("h1", ";Multiplicity; Count", 12, -0.5, 11.5);}
-
-	TH1D* histGroupSize = nullptr;
-	if (verbose) {histGroupSize = new TH1D("h2", ";Group size; Count", 21, -0.5, 20.5);}
+	// Not leaking
+	TH1D* histMultiplicity = new TH1D("Multiplicity", ";Multiplicity; Count", 12, -0.5, 11.5);
+	TH1D* histGroupSize = new TH1D("Group size", ";Group size; Count", 21, -0.5, 20.5);
 
 	Long64_t ii = 0;
 	Long64_t nEntries = tree->GetEntries();
@@ -337,11 +337,14 @@ void coincidenceGrouping(TTree* tree, Int_t& groupID, TBranch* b0, Int_t& groupE
 		}
 
 		groupIDTemp++;
-		if (verbose) {histMultiplicity->Fill(seen.size());}
-		if (verbose) {histGroupSize->Fill(groupSize);}
+		histMultiplicity->Fill(seen.size());
+		histGroupSize->Fill(groupSize);
 		// groupEdges.push_back(ii);
 		// groupMultiplicities.push_back(seen.size());
 	}
+
+	histMultiplicity->Write();
+	histGroupSize->Write();
 
 	/*
 	// Reconstruct the groupEdges from the groupID

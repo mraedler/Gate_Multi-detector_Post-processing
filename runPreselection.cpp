@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 #include <TFile.h>
 #include "include/utils.h"
@@ -24,6 +25,14 @@ void processSingleFile(const size_t idx) {
         std::exit(1);
     }
 
+    // Set up new file containing only the preselected data
+    TString newFullPath = g_fullPaths[idx];
+    newFullPath.Remove(newFullPath.Last('.'));
+    newFullPath += "_new.root";
+    TFile* newFile = TFile::Open(newFullPath, "RECREATE");
+    //newFile->cd();  // Ensure the new file is linked
+    TTree* newTree = tree->CloneTree(0);
+
     // Get necessary leafs
     // todo: Can also be moved to the respective event selection functions
     TLeaf* gantryID1 = tree->GetLeaf("gantryID1");
@@ -34,23 +43,26 @@ void processSingleFile(const size_t idx) {
     TLeaf* scatterTest = tree->GetLeaf("scatterTest");
 
     // Add boolean branch for the preselection
-    Bool_t preselection;
-    TBranch* b = tree->Branch("preselection", &preselection, "preselection/O");
+    Bool_t passMinSectorDifferenceTest;
+    TBranch* b1 = tree->Branch("passMinSectorDifferenceTest", &passMinSectorDifferenceTest, "passMinSectorDifferenceTest/O");
+    runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, passMinSectorDifferenceTest, b1, g_minSectorDifference, g_verbose);
 
-    runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, preselection, b, g_minSectorDifference, g_verbose);
-    runScatterTest(tree, scatterTest, gantryID1, gantryID2, trueness, preselection, b, g_verbose);
+    Bool_t passScatterTest;
+    TBranch* b2 = tree->Branch("passScatterTest", &passScatterTest, "passScatterTest/O");
+    runScatterTest(tree, scatterTest, gantryID1, gantryID2, trueness, passMinSectorDifferenceTest, passScatterTest, b2, g_verbose);
 
-    // Set up new file containing only the preselected data
-    TString newFullPath = g_fullPaths[idx];
-    newFullPath.Remove(newFullPath.Last('.'));
-    newFullPath += "_new.root";
-    TFile* newFile = TFile::Open(newFullPath, "RECREATE");
-    //newFile->cd();  // Ensure the new file is linked
-    TTree* newTree = tree->CloneTree(0);
     Long64_t nEntries = tree->GetEntries();
+    Long64_t progressStep = nEntries / 100;
+
     for (Long64_t ii = 0; ii < nEntries; ++ii) {
         tree->GetEntry(ii);
-        if (!preselection) continue;
+
+        // Print progress (adding nEntries / 2 corresponds to rounding in integer division)
+        if (ii % progressStep == 0) {std::cout << (ii * 100 + nEntries / 2) / nEntries << " %" << std::endl;}
+
+        if (!passMinSectorDifferenceTest) continue;
+        if (!passScatterTest) continue;
+
         newTree->Fill();
     }
 
@@ -82,8 +94,8 @@ int main(int argc, char* argv[]) {
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
     // todo: If you change the LUT here, also change in the runMinSectorDifferenceTest (fix this)
     // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_dz_1_mm.lut");
-    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
-    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm.lut");
+    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
+    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm.lut");
 
     // runSequentially(g_fullPaths.size(), processSingleFile);
     runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
