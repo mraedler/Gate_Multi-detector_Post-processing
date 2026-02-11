@@ -44,4 +44,6 @@ auto minmax(const Container& c)
     return std::make_pair(*minIt, *maxIt);
 }
 
+TString assignGantryName(Int_t gantryID1, Int_t gantryID2);
+
 #endif //UTILS_H

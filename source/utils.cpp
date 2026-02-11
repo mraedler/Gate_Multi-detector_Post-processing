@@ -180,3 +180,23 @@ std::vector<TString> splitPath(const TString& path) {
 
     return dirs;
 }
+
+
+
+TString assignGantryName(Int_t gantryID1, Int_t gantryID2) {
+    bool isBI1 = (gantryID1 == 2);
+    bool isBI2 = (gantryID2 == 2);
+
+    TString gantryName;
+    if (!isBI1 && !isBI2) {
+        gantryName = "TB-TB";
+    } else if (isBI1 ^ isBI2) {
+        gantryName = "TB-BI";
+    } else if (isBI1 && isBI2) {
+        gantryName = "BI-BI";
+    } else {
+        gantryName = "Unknown";
+        std::cerr << "Warning: unknown gantry.\n";
+    }
+    return gantryName;
+}

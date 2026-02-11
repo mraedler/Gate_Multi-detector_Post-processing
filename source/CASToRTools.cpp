@@ -74,8 +74,8 @@ ScannerParams totalBodyJPETWithBrainInsert_6_30()
 
 void setCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b) {
 	// Get the scanner parameters
-	// const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
-	const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
+	const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
+	// const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
 
 	// Set the distributions and the random number generator for the blurring along the axial direction
 	std::vector<std::normal_distribution<>> dists;

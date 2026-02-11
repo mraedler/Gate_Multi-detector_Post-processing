@@ -2,6 +2,7 @@
 #include <TSystem.h>
 #include <fstream>
 #include "include/utils.h"
+#include "include/eventSelection.h"
 #include "include/CASToRTools.h"
 
 
@@ -9,6 +10,8 @@
 bool g_verbose;
 TString g_treeName;
 std::vector<TString> g_fullPaths;
+TString g_gantry;
+TString g_selection;
 TString g_lut_name;
 TString g_outputPath;
 TString g_outputFileName;
@@ -20,7 +23,7 @@ TString g_tof_fwhm_ps;
 void processSingleFile(const size_t idx) {
     std::cout << "Processing: " << g_fullPaths[idx] << std::endl;
 
-    TFile* file = getTFile(g_fullPaths[idx], "READ", g_verbose);
+    TFile* file = getTFile(g_fullPaths[idx], "UPDATE", g_verbose);
     TTree* tree = getTTree(file, g_treeName, g_verbose);
 
     TString fileName = gSystem->BaseName(g_fullPaths[idx]);
@@ -36,11 +39,28 @@ void processSingleFile(const size_t idx) {
         std::exit(1);
     }
 
+    if (!checkIfLeafExists(tree, "group")) {
+        std::cerr << "Error: coincidence grouping leafs missing." << std::endl;
+        std::exit(1);
+    }
+
+    // Add boolean branch for the preselection
+    Bool_t selection;
+    TBranch* b = tree->Branch("selection", &selection, "selection/O");
+    selectBasedOnEnergy(tree, selection, b, g_verbose);
+    // selectBasedOnTime(tree, selection, b, g_verbose);
+
     TLeaf* time1 = tree->GetLeaf("time1");
     TLeaf* time2 = tree->GetLeaf("time2");
 
+    TLeaf* energy1 = tree->GetLeaf("energy1");
+    TLeaf* energy2 = tree->GetLeaf("energy2");
+
     TLeaf* castorID1 = tree->GetLeaf("castorID1");
     TLeaf* castorID2 = tree->GetLeaf("castorID2");
+
+    TLeaf* gantryID1 = tree->GetLeaf("gantryID1");
+    TLeaf* gantryID2 = tree->GetLeaf("gantryID2");
 
     TLeaf* trueness = tree->GetLeaf("trueness");
 
@@ -50,8 +70,17 @@ void processSingleFile(const size_t idx) {
     for (Long64_t ii = 0; ii < nEntries; ++ii) {
         tree->GetEntry(ii);
 
-        // True events only
-        if (!trueness->GetValue()) {continue;}
+        // Both need to be above 200 keV
+        if ((energy1->GetValue() < .2) || (energy2->GetValue() < .2)) {continue;}
+
+        if (g_selection == "true") {
+            if (!trueness->GetValue()) {continue;}
+        } else if (g_selection == "energy") {
+            if (!selection) {continue;}
+        }
+
+        TString currentEntryGantryName =  assignGantryName(gantryID1->GetValue(), gantryID2->GetValue());
+        if (currentEntryGantryName != g_gantry && g_gantry != "ALL") {continue;}
 
         double t1 = time1->GetValue();
         double t2 = time2->GetValue();
@@ -70,8 +99,6 @@ void processSingleFile(const size_t idx) {
     std::ofstream out(g_outputPath + fileName + ".cdf" , std::ios::binary);
     out.write(reinterpret_cast<const char*>(buffer.data()), buffer.size() * sizeof(CdfEntry));
     out.close();
-
-    std::exit(1);
 }
 
 
@@ -187,14 +214,25 @@ int main(int argc, char* argv[]) {
     g_verbose = false;
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
-    g_lut_name = "TB_J-PET_7th_gen_brain_insert_dz_1_mm";
+
+    // g_gantry = "ALL";
+    // g_gantry = "TB-TB";
+    // g_gantry = "TB-BI";
+    g_gantry = "BI-BI";
+
+    // g_selection = "true";
+    g_selection = "energy";
+    // g_selection = "time";
+
+    g_lut_name = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    // g_lut_name = "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm";
     g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
-    g_outputFileName = "true";
+    g_outputFileName = g_gantry + "_" + g_selection;
     g_timeInitial_ms = std::numeric_limits<uint32_t>::max();
     g_timeFinal_ms = std::numeric_limits<uint32_t>::min();
     g_min_dt_ps = std::numeric_limits<float>::max();
     g_max_dt_ps = -std::numeric_limits<float>::max();
-    g_tof_fwhm_ps = "500";
+    g_tof_fwhm_ps = "400";
 
     // Adapt the same folder structure (last two folders) from the input
     std::vector<TString> pathSplit = splitPath(path);
@@ -210,7 +248,6 @@ int main(int argc, char* argv[]) {
 
     // make the sensitivity map
     // put in the draft
-    // add the other event selections
 
     return 0;
 }
