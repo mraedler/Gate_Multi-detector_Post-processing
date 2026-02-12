@@ -48,7 +48,7 @@ void identifyTrueEvents(TTree *tree, Bool_t& bBool, TBranch* b) {
 	std::cout << "Percentage of true events "
 		  << std::fixed << std::setprecision(2)
 		  << (passingPercentage / nEntries * 100)
-		  << " %.\n\n";
+		  << " %.\n";
 }
 
 

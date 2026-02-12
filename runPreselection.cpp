@@ -25,6 +25,17 @@ void processSingleFile(const size_t idx) {
         std::exit(1);
     }
 
+    // Remove branches before cloning the tree that do not need to be saved in the new file
+    tree->SetBranchStatus("runID", false);
+    tree->SetBranchStatus("axialPos", false);
+    tree->SetBranchStatus("rotationAngle", false);
+    tree->SetBranchStatus("sinogramTheta", false);
+    tree->SetBranchStatus("sinogramS", false);
+    tree->SetBranchStatus("comptVolName1", false);
+    tree->SetBranchStatus("comptVolName2", false);
+    tree->SetBranchStatus("RayleighVolName1", false);
+    tree->SetBranchStatus("RayleighVolName2", false);
+
     // Set up new file containing only the preselected data
     TString newFullPath = g_fullPaths[idx];
     newFullPath.Remove(newFullPath.Last('.'));
@@ -52,7 +63,7 @@ void processSingleFile(const size_t idx) {
     runScatterTest(tree, scatterTest, gantryID1, gantryID2, trueness, passMinSectorDifferenceTest, passScatterTest, b2, g_verbose);
 
     Long64_t nEntries = tree->GetEntries();
-    Long64_t progressStep = nEntries / 100;
+    Long64_t progressStep = nEntries / 10;
 
     for (Long64_t ii = 0; ii < nEntries; ++ii) {
         tree->GetEntry(ii);
@@ -68,7 +79,7 @@ void processSingleFile(const size_t idx) {
 
     std::cout << "Writing: " << newFullPath << std::endl;
 
-    newTree->Write();
+    newTree->Write("", TObject::kOverwrite);
     newFile->Close();
     file->Close();
 
