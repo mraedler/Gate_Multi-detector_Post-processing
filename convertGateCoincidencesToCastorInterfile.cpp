@@ -1,6 +1,7 @@
 #include <iostream>
 #include <TSystem.h>
 #include <fstream>
+#include <set>
 #include "include/utils.h"
 #include "include/eventSelection.h"
 #include "include/CASToRTools.h"
@@ -12,7 +13,7 @@ TString g_treeName;
 std::vector<TString> g_fullPaths;
 TString g_gantry;
 TString g_selection;
-TString g_lut_name;
+TString g_lutName;
 TString g_outputPath;
 TString g_outputFileName;
 uint32_t g_timeInitial_ms, g_timeFinal_ms;
@@ -29,7 +30,7 @@ void processSingleFile(const size_t idx) {
     TString fileName = gSystem->BaseName(g_fullPaths[idx]);
     fileName.Remove(fileName.Last('.'));
 
-    if (!checkIfLeafExists(tree, "castorID1") || !checkIfLeafExists(tree, "castorID2")) {
+    if (!checkIfLeafExists(tree, "castorID")) {
         std::cerr << "Error: castorID leaf(s) missing." << std::endl;
         std::exit(1);
     }
@@ -47,8 +48,8 @@ void processSingleFile(const size_t idx) {
     // Add boolean branch for the preselection
     Bool_t selection;
     TBranch* b = tree->Branch("selection", &selection, "selection/O");
-    selectBasedOnEnergy(tree, selection, b, g_verbose);
-    // selectBasedOnTime(tree, selection, b, g_verbose);
+    if (g_selection == "energy") {selectBasedOnEnergy(tree, selection, b, g_verbose);}
+    if (g_selection == "time") {selectBasedOnTime(tree, selection, b, g_verbose);}
 
     TLeaf* time1 = tree->GetLeaf("time1");
     TLeaf* time2 = tree->GetLeaf("time2");
@@ -176,7 +177,7 @@ void makeCastorDataHeaderFile(size_t nEntriesTotal) {
     std::ofstream file(g_outputPath + g_outputFileName + ".cdh" , std::ios::binary);
     if (!file) {throw std::runtime_error("Cannot open header file.");}
 
-    file << "Scanner name: " << g_lut_name << "\n";
+    file << "Scanner name: " << g_lutName << "\n";
     file << "Data filename: " << g_outputFileName << ".cdf\n";
     file << "Data type: PET\n";
     file << "Data mode: list-mode\n";  // histogram, normalization
@@ -215,17 +216,39 @@ int main(int argc, char* argv[]) {
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
-    // g_gantry = "ALL";
-    // g_gantry = "TB-TB";
-    // g_gantry = "TB-BI";
-    g_gantry = "BI-BI";
+    g_gantry = "ALL";
+    g_selection = "true";
+    g_lutName =  "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
 
-    // g_selection = "true";
-    g_selection = "energy";
-    // g_selection = "time";
+    std::set<TString> gantryOptions = {"ALL", "TB-TB", "TB-BI", "BI-BI"};
+    std::set<TString> selectionOptions = {"true", "energy", "time"};
+    std::set<TString> lutOptions = {"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"};
 
-    g_lut_name = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
-    // g_lut_name = "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm";
+    bool allArgsProvidedAndUsed = argc >= 5;  // todo: increment if more optional args are added
+
+    // Parse optional arguments
+    for (int ii = 2; ii < argc; ++ii) {
+        std::string arg = argv[ii];
+
+        bool argRecognized = false;
+        setArgument("gantry", arg, gantryOptions, g_gantry, argRecognized, allArgsProvidedAndUsed);
+        setArgument("selection", arg, selectionOptions, g_selection, argRecognized, allArgsProvidedAndUsed);
+        setArgument("lut", arg, lutOptions, g_lutName, argRecognized, allArgsProvidedAndUsed);
+
+        if (!argRecognized) {std::cout << "Warning: unknown argument '" << arg << "' ignored.\n";}
+    }
+
+    if (!allArgsProvidedAndUsed) {
+        std::cout << "\nWarning: not all optional arguments were provided or valid.\n";
+        std::cout << "Using the following (default) parameters:\n";
+        std::cout << "  gantry    = " << g_gantry    << "\n";
+        std::cout << "  selection = " << g_selection << "\n";
+        std::cout << "  lut = " << g_lutName << "\n\n";
+
+        std::cout << "Press ENTER to continue or Ctrl+C to abort...";
+        std::cin.get();  // wait for Enter
+    }
+
     g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
     g_outputFileName = g_gantry + "_" + g_selection;
     g_timeInitial_ms = std::numeric_limits<uint32_t>::max();

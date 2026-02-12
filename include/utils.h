@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <set>
 #include <vector>
 #include <TString.h>
 #include <TTree.h>
@@ -45,5 +46,7 @@ auto minmax(const Container& c)
 }
 
 TString assignGantryName(Int_t gantryID1, Int_t gantryID2);
+
+void setArgument(std::string argName, const std::string& arg, const std::set<TString>& argOptions, TString& g_arg, bool& argRecognized, bool& argUsed);
 
 #endif //UTILS_H

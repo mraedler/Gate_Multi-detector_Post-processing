@@ -1,6 +1,7 @@
 #include "../include/utils.h"
 
 #include <iostream>
+#include <set>
 #include <TFile.h>
 #include <TList.h>
 #include <TKey.h>
@@ -199,4 +200,24 @@ TString assignGantryName(Int_t gantryID1, Int_t gantryID2) {
         std::cerr << "Warning: unknown gantry.\n";
     }
     return gantryName;
+}
+
+
+
+void setArgument(std::string argName, const std::string& arg, const std::set<TString>& argOptions, TString& g_arg, bool& argRecognized, bool& argUsed) {
+    if (arg.rfind("--" + argName + "=", 0) == 0) {
+        argRecognized = true;
+        TString argValue = arg.substr(argName.size() + 3);
+        if (argOptions.count(argValue)) {g_arg = argValue;}
+        else {
+            std::cout << "Warning: value '" << argValue << "' ignored since it is not valid for the key '"<< argName << "'. Must be one of {";
+            for (auto it = argOptions.begin(); it != argOptions.end(); ++it) {
+                if (it != argOptions.begin()) std::cout << ", ";
+                std::cout << "'" << *it << "'";
+            }
+            std::cout << "}." << std::endl;
+
+            argUsed = false;
+        }
+    }
 }
