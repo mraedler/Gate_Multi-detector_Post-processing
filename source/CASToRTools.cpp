@@ -72,10 +72,17 @@ ScannerParams totalBodyJPETWithBrainInsert_6_30()
 
 
 
-void setCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b) {
+void setCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, const TLeaf* crystalID, const TLeaf* layerID, Int_t& castorID, TBranch* b, TString& lutName) {
 	// Get the scanner parameters
-	const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
-	// const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
+	ScannerParams sp;
+	if (lutName == "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm") {
+		sp = totalBodyJPETWithBrainInsert_6_30();
+	} else if (lutName == "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm") {
+		sp = totalBodyJPETWithBrainInsert_4_18();
+	} else {
+		std::cerr << "Unknown LUT name." << std::endl;
+		std::exit(1);
+	}
 
 	// Set the distributions and the random number generator for the blurring along the axial direction
 	std::vector<std::normal_distribution<>> dists;
