@@ -116,12 +116,6 @@ int main(int argc, char* argv[]) {
 
     g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/" + g_lutName + ".lut");
 
-
-    // todo: If you change the LUT here, also change in the runMinSectorDifferenceTest (fix this)
-    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_dz_1_mm.lut");
-    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
-    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm.lut");
-
     // runSequentially(g_fullPaths.size(), processSingleFile);
     runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
 

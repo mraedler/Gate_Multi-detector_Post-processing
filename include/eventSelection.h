@@ -13,7 +13,7 @@ void runMinSectorDifferenceTest(TTree* tree,
     const TLeaf* gantryID1, const TLeaf* gantryID2,
     const TLeaf* rsectorID1, const TLeaf* rsectorID2,
     Bool_t& passMinSectorDifferenceTest, TBranch* b,
-    TString& lutName,
+    const TString& lutName,
     int minSectorDifference,
     bool verbose);
 
