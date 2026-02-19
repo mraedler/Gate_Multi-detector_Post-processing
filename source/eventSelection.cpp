@@ -107,9 +107,17 @@ void setScatterTest(TTree* tree, Int_t& castorID1, Int_t& castorID2, std::vector
 
 
 
-void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* rsectorID1, const TLeaf* rsectorID2, Bool_t& passMinSectorDifferenceTest, TBranch* b, int minSectorDifference, bool verbose) {
-    const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
-    // const ScannerParams sp = totalBodyJPETWithBrainInsert_6_30();
+void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf* gantryID2, const TLeaf* rsectorID1, const TLeaf* rsectorID2, Bool_t& passMinSectorDifferenceTest, TBranch* b, const TString& lutName, int minSectorDifference, bool verbose) {
+	// Get the scanner parameters
+	ScannerParams sp;
+	if (lutName == "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm") {
+		sp = totalBodyJPETWithBrainInsert_6_30();
+	} else if (lutName == "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm") {
+		sp = totalBodyJPETWithBrainInsert_4_18();
+	} else {
+		std::cerr << "Unknown LUT name." << std::endl;
+		std::exit(1);
+	}
 
     TH1D* hist = new TH1D("Sector difference before selection", ";Sector difference; Count", 15, -2.5, 12.5);
 

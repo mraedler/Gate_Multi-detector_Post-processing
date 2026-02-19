@@ -10,6 +10,7 @@ bool g_verbose;
 int g_minSectorDifference;
 TString g_treeName;
 std::vector<TString> g_fullPaths;
+TString g_lutName;
 std::vector<LutEntry> g_lut;
 
 
@@ -56,7 +57,7 @@ void processSingleFile(const size_t idx) {
     // Add boolean branch for the preselection
     Bool_t passMinSectorDifferenceTest;
     TBranch* b1 = tree->Branch("passMinSectorDifferenceTest", &passMinSectorDifferenceTest, "passMinSectorDifferenceTest/O");
-    runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, passMinSectorDifferenceTest, b1, g_minSectorDifference, g_verbose);
+    runMinSectorDifferenceTest(tree, gantryID1, gantryID2, rsectorID1, rsectorID2, passMinSectorDifferenceTest, b1, g_lutName, g_minSectorDifference, g_verbose);
 
     Bool_t passScatterTest;
     TBranch* b2 = tree->Branch("passScatterTest", &passScatterTest, "passScatterTest/O");
@@ -103,9 +104,22 @@ int main(int argc, char* argv[]) {
     g_minSectorDifference = 2;
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
+
+    g_lutName = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+
+    std::map<std::string, ArgumentOptions> argOpts = {
+        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}}
+    };
+
+    parseArguments(argc, argv, argOpts);
+    checkArguments(argOpts);
+
+    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/" + g_lutName + ".lut");
+
+
     // todo: If you change the LUT here, also change in the runMinSectorDifferenceTest (fix this)
     // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_dz_1_mm.lut");
-    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
+    // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm.lut");
     // g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm.lut");
 
     // runSequentially(g_fullPaths.size(), processSingleFile);

@@ -220,34 +220,14 @@ int main(int argc, char* argv[]) {
     g_selection = "true";
     g_lutName =  "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
 
-    std::set<TString> gantryOptions = {"ALL", "TB-TB", "TB-BI", "BI-BI"};
-    std::set<TString> selectionOptions = {"true", "energy", "time"};
-    std::set<TString> lutOptions = {"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"};
+    std::map<std::string, ArgumentOptions> argOpts = {
+        {"gantry", {{"ALL", "TB-TB", "TB-BI", "BI-BI"}, g_gantry}},
+        {"selection", {{"true", "energy", "time"}, g_selection}},
+        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}}
+    };
 
-    bool allArgsProvidedAndUsed = argc >= 5;  // todo: increment if more optional args are added
-
-    // Parse optional arguments
-    for (int ii = 2; ii < argc; ++ii) {
-        std::string arg = argv[ii];
-
-        bool argRecognized = false;
-        setArgument("gantry", arg, gantryOptions, g_gantry, argRecognized, allArgsProvidedAndUsed);
-        setArgument("selection", arg, selectionOptions, g_selection, argRecognized, allArgsProvidedAndUsed);
-        setArgument("lut", arg, lutOptions, g_lutName, argRecognized, allArgsProvidedAndUsed);
-
-        if (!argRecognized) {std::cout << "Warning: unknown argument '" << arg << "' ignored.\n";}
-    }
-
-    if (!allArgsProvidedAndUsed) {
-        std::cout << "\nWarning: not all optional arguments were provided or valid.\n";
-        std::cout << "Using the following (default) parameters:\n";
-        std::cout << "  gantry    = " << g_gantry    << "\n";
-        std::cout << "  selection = " << g_selection << "\n";
-        std::cout << "  lut = " << g_lutName << "\n\n";
-
-        std::cout << "Press ENTER to continue or Ctrl+C to abort...";
-        std::cin.get();  // wait for Enter
-    }
+    parseArguments(argc, argv, argOpts);
+    checkArguments(argOpts);
 
     g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
     g_outputFileName = g_gantry + "_" + g_selection;

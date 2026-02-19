@@ -47,6 +47,15 @@ auto minmax(const Container& c)
 
 TString assignGantryName(Int_t gantryID1, Int_t gantryID2);
 
-void setArgument(std::string argName, const std::string& arg, const std::set<TString>& argOptions, TString& g_arg, bool& argRecognized, bool& argUsed);
+// void setArgument(std::string argName, const std::string& arg, const std::set<TString>& argOptions, TString& g_arg, bool& argRecognized, bool& argUsed);
+
+struct ArgumentOptions {
+    std::set<TString> options;
+    TString& target;
+    bool set = false;
+};
+
+void parseArguments(int argc, char* argv[], std::map<std::string, ArgumentOptions>& options);
+void checkArguments(std::map<std::string, ArgumentOptions>& options);
 
 #endif //UTILS_H

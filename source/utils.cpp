@@ -10,6 +10,7 @@
 #include <TObjString.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <nlohmann/detail/input/parser.hpp>
 
 void listAvailableTrees(const TFile* file) {
     TList* keys = file->GetListOfKeys();
@@ -204,20 +205,87 @@ TString assignGantryName(Int_t gantryID1, Int_t gantryID2) {
 
 
 
-void setArgument(std::string argName, const std::string& arg, const std::set<TString>& argOptions, TString& g_arg, bool& argRecognized, bool& argUsed) {
-    if (arg.rfind("--" + argName + "=", 0) == 0) {
-        argRecognized = true;
-        TString argValue = arg.substr(argName.size() + 3);
-        if (argOptions.count(argValue)) {g_arg = argValue;}
-        else {
-            std::cout << "Warning: value '" << argValue << "' ignored since it is not valid for the key '"<< argName << "'. Must be one of {";
-            for (auto it = argOptions.begin(); it != argOptions.end(); ++it) {
-                if (it != argOptions.begin()) std::cout << ", ";
-                std::cout << "'" << *it << "'";
-            }
-            std::cout << "}." << std::endl;
+// void setArgument(std::string argName, const std::string& arg, const std::set<TString>& argOptions, TString& g_arg, bool& argRecognized, bool& argUsed) {
+//     if (arg.rfind("--" + argName + "=", 0) == 0) {
+//         argRecognized = true;
+//         TString argValue = arg.substr(argName.size() + 3);
+//         if (argOptions.count(argValue)) {g_arg = argValue;}
+//         else {
+//             std::cout << "Warning: value '" << argValue << "' ignored since it is not valid for the key '"<< argName << "'. Must be one of {";
+//             for (auto it = argOptions.begin(); it != argOptions.end(); ++it) {
+//                 if (it != argOptions.begin()) std::cout << ", ";
+//                 std::cout << "'" << *it << "'";
+//             }
+//             std::cout << "}." << std::endl;
+//
+//             argUsed = false;
+//         }
+//     }
+// }
 
-            argUsed = false;
+
+
+void parseArguments(int argc, char* argv[], std::map<std::string, ArgumentOptions>& argOpts) {
+
+    for (int ii = 2; ii < argc; ++ii) {
+
+        std::string arg = argv[ii];
+
+        if (arg.rfind("--", 0) != 0) {
+            std::cout << "Warning: unknown argument '" << arg << "' ignored.\n";
+            continue;
         }
+
+        auto pos = arg.find('=');
+        if (pos == std::string::npos) {
+            std::cout << "Warning: malformed argument '" << arg << "' ignored.\n";
+            continue;
+        }
+
+        std::string key = arg.substr(2, pos - 2);
+        TString value   = arg.substr(pos + 1);
+
+        auto it = argOpts.find(key);
+        if (it == argOpts.end()) {
+            std::cout << "Warning: unknown key '" << key << "' ignored.\n";
+            continue;
+        }
+
+        if (it->second.options.count(value)) {
+            it->second.target = value;
+            it->second.set = true;
+        } else {
+            std::cout << "Warning: invalid value '" << value
+                      << "' for key '" << key << "'. Must be one of {";
+
+            bool first = true;
+            for (const auto& v : it->second.options) {
+                if (!first) std::cout << ", ";
+                std::cout << "'" << v << "'";
+                first = false;
+            }
+            std::cout << "}.\n";
+
+        }
+    }
+
+}
+
+
+void checkArguments(std::map<std::string, ArgumentOptions>& argOpts) {
+    bool anyArgumentNotSet = false;
+
+    // std::cout << "\n";
+    for (const auto& [key, opt] : argOpts) {
+        if (!opt.set) {
+            anyArgumentNotSet = true;
+            std::cout << "Using default for '--" << key
+                      << "': " << opt.target << "\n";
+        }
+    }
+    if (anyArgumentNotSet) {
+        std::cout << "\nWarning: reverted to default for some arguments." << std::endl;
+        std::cout << "Press ENTER to confirm and continue or Ctrl+C to abort...";
+        std::cin.get();
     }
 }

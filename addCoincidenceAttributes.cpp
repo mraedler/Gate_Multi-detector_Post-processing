@@ -97,29 +97,14 @@ int main(int argc, char* argv[]) {
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
-    g_lutName =  "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
-    std::set<TString> lutOptions = {"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"};
+    g_lutName = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
 
-    bool allArgsProvidedAndUsed = argc >= 3;  // todo: increment if more optional args are added
+    std::map<std::string, ArgumentOptions> argOpts = {
+        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}}
+    };
 
-    // Parse optional arguments
-    for (int ii = 2; ii < argc; ++ii) {
-        std::string arg = argv[ii];
-
-        bool argRecognized = false;
-        setArgument("lut", arg, lutOptions, g_lutName, argRecognized, allArgsProvidedAndUsed);
-
-        if (!argRecognized) {std::cout << "Warning: unknown argument '" << arg << "' ignored.\n";}
-    }
-
-    if (!allArgsProvidedAndUsed) {
-        std::cout << "\nWarning: not all optional arguments were provided or valid.\n";
-        std::cout << "Using the following (default) parameters:\n";
-        std::cout << "  lut = " << g_lutName << "\n\n";
-
-        std::cout << "Press ENTER to continue or Ctrl+C to abort...";
-        std::cin.get();  // wait for Enter
-    }
+    parseArguments(argc, argv, argOpts);
+    checkArguments(argOpts);
 
     g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/" + g_lutName + ".lut");
 
