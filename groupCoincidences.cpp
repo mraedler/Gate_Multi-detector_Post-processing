@@ -21,20 +21,20 @@ void processSingleRootFile(const size_t idx) {
         std::exit(1);
     }
 
-    checkIfLeafExists(tree, "group");
+    if (!checkIfLeafExists(tree, "group")) {
+        Int_t groupID, groupEventID1, groupEventID2;
+        TBranch* b0 = tree->Branch("groupID", &groupID, "groupID/I");
+        TBranch* b1 = tree->Branch("groupEventID1", &groupEventID1, "groupEventID1/I");
+        TBranch* b2 = tree->Branch("groupEventID2", &groupEventID2, "groupEventID2/I");
 
-    Int_t groupID, groupEventID1, groupEventID2;
-    TBranch* b0 = tree->Branch("groupID", &groupID, "groupID/I");
-    TBranch* b1 = tree->Branch("groupEventID1", &groupEventID1, "groupEventID1/I");
-    TBranch* b2 = tree->Branch("groupEventID2", &groupEventID2, "groupEventID2/I");
+        coincidenceGrouping(tree, groupID, b0, groupEventID1, b1, groupEventID2, b2, g_verbose);
 
-    coincidenceGrouping(tree, groupID, b0, groupEventID1, b1, groupEventID2, b2, g_verbose);
+        std::cout << "Writing: " << g_fullPaths[idx] << std::endl;
 
-    std::cout << "Writing: " << g_fullPaths[idx] << std::endl;
-
-    file->cd();
-    tree->Write("", TObject::kWriteDelete);
-    file->Close();
+        file->cd();
+        tree->Write("", TObject::kWriteDelete);
+        file->Close();
+    }
 }
 
 
