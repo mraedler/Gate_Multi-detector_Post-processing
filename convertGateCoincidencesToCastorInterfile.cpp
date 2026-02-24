@@ -17,6 +17,8 @@ TString g_lutName;
 TString g_outputPath;
 TString g_outputFileName;
 uint32_t g_timeInitial_ms, g_timeFinal_ms;
+// TString g_dzMax_mm;
+double g_dzMax_mm;
 float g_min_dt_ps, g_max_dt_ps;
 TString g_tof_fwhm_ps;
 
@@ -93,6 +95,8 @@ void processSingleFile(const size_t idx) {
 
         buffer.push_back({time_ms, delta_time_ps, c1, c2});
     }
+
+    std::exit(1);
 
     // std::cout << buffer.size() << std::endl;
 
@@ -219,14 +223,19 @@ int main(int argc, char* argv[]) {
     g_gantry = "ALL";
     g_selection = "true";
     g_lutName =  "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    TString dzMax_mm = "1000";
+    g_tof_fwhm_ps = "400";
 
     std::map<std::string, ArgumentOptions> argOpts = {
         {"gantry", {{"ALL", "TB-TB", "TB-BI", "BI-BI"}, g_gantry}},
         {"selection", {{"true", "energy", "time"}, g_selection}},
-        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}}
+        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}},
+        {"dzMax", {{"0", "2000"}, dzMax_mm}},
+        {"tof", {{"0", "1000"}, g_tof_fwhm_ps}}
     };
 
     parseArguments(argc, argv, argOpts);
+    g_dzMax_mm = std::stod(dzMax_mm.Data());
     checkArguments(argOpts);
 
     g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
@@ -235,14 +244,14 @@ int main(int argc, char* argv[]) {
     g_timeFinal_ms = std::numeric_limits<uint32_t>::min();
     g_min_dt_ps = std::numeric_limits<float>::max();
     g_max_dt_ps = -std::numeric_limits<float>::max();
-    g_tof_fwhm_ps = "400";
 
     // Adapt the same folder structure (last two folders) from the input
     std::vector<TString> pathSplit = splitPath(path);
     g_outputPath += pathSplit[pathSplit.size() - 2] + "/" + pathSplit[pathSplit.size() - 1] + "/";
 
-    // runSequentially(g_fullPaths.size(), processSingleFile);
-    runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
+    runSequentially(g_fullPaths.size(), processSingleFile);
+    // runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
+    std::exit(1);
 
     size_t nEntriesTotal = mergeCastorDataFiles();
     // size_t nEntriesTotal = 1;

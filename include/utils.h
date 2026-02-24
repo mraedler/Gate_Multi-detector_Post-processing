@@ -58,4 +58,6 @@ struct ArgumentOptions {
 void parseArguments(int argc, char* argv[], std::map<std::string, ArgumentOptions>& options);
 void checkArguments(std::map<std::string, ArgumentOptions>& options);
 
+bool isNumeric(const TString& s);
+
 #endif //UTILS_H

@@ -251,6 +251,26 @@ void parseArguments(int argc, char* argv[], std::map<std::string, ArgumentOption
             continue;
         }
 
+        if (isNumeric(value)) {
+            // todo: Check if the options are valid numeric upper and lower limits
+            auto iter = it->second.options.begin();
+            double low  = std::stod(iter->Data());  // first
+            double high = std::stod(std::next(iter)->Data()); // second
+
+            double v = std::stod(value.Data());
+
+            if (v >= low && v <= high) {
+                it->second.target = value;
+                it->second.set = true;
+            }
+            else {
+                std::cout << "Warning: value '" << value << "' for key '" << key
+                          << "' out of range [" << low << ", " << high << "].\n";
+            }
+
+            continue; // skip discrete handling below
+        }
+
         if (it->second.options.count(value)) {
             it->second.target = value;
             it->second.set = true;
@@ -270,6 +290,23 @@ void parseArguments(int argc, char* argv[], std::map<std::string, ArgumentOption
     }
 
 }
+
+
+
+bool isNumeric(const TString& s)
+{
+    std::string str = s.Data();
+
+    if (str.empty()) {return false;}
+
+    try {
+        size_t pos;
+        std::stod(str, &pos);
+        return pos == str.size();  // ensure full string was numeric
+    }
+    catch (...) {return false;}
+}
+
 
 
 void checkArguments(std::map<std::string, ArgumentOptions>& argOpts) {
