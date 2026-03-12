@@ -47,7 +47,7 @@ void processSingleFile(const size_t idx) {
     Bool_t selection;
     TBranch* b = tree->Branch("selection", &selection, "selection/O");
     // selectBasedOnTime(tree, selection, b, g_verbose);
-    selectBasedOnEnergy(tree, selection, b, g_verbose);
+    // selectBasedOnEnergy(tree, selection, b, g_verbose);
 
     TLeaf* trueness = tree->GetLeaf("trueness");
 
@@ -56,6 +56,9 @@ void processSingleFile(const size_t idx) {
 
     TLeaf* gantryID1 = tree->GetLeaf("gantryID1");
     TLeaf* gantryID2 = tree->GetLeaf("gantryID2");
+
+    TLeaf* crystalID1 = tree->GetLeaf("crystalID1");
+    TLeaf* crystalID2 = tree->GetLeaf("crystalID2");
 
     TLeaf* sourcePosX1 = tree->GetLeaf("sourcePosX1");
     TLeaf* sourcePosY1 = tree->GetLeaf("sourcePosY1");
@@ -69,15 +72,22 @@ void processSingleFile(const size_t idx) {
         tree->GetEntry(ii);
         bool aboveEnergyThreshold = (energy1->GetValue() > .2) && (energy2->GetValue() > .2);  // both above 200 keV
 
-        // if (trueness->GetValue() && aboveEnergyThreshold) {
-        if (selection && aboveEnergyThreshold) {
+        if (trueness->GetValue() && aboveEnergyThreshold) {
+        // if (selection && aboveEnergyThreshold) {
         // if (selection && trueness->GetValue() && aboveEnergyThreshold) {
-            if ((gantryID1->GetValue() < 2) && (gantryID2->GetValue() < 2)) {
+
+            TString currentEntryGantryName = assignGantryName(gantryID1->GetValue(), gantryID2->GetValue());
+
+            if (!((gantryID1->GetValue() == 0) & (gantryID2->GetValue() == 0) & (crystalID1->GetValue() == 1) & (crystalID2->GetValue() == 1))) continue;
+
+            if (currentEntryGantryName == "TB-TB") {
                 h_TBTB->Fill(sourcePosX1->GetValue(), sourcePosY1->GetValue(), sourcePosZ1->GetValue());
-            } else if (((gantryID1->GetValue() < 2) && (gantryID2->GetValue() == 2)) || ((gantryID1->GetValue() == 2) && (gantryID2->GetValue() < 2))) {
+            } else if (currentEntryGantryName == "TB-BI") {
                 h_TBBI->Fill(sourcePosX1->GetValue(), sourcePosY1->GetValue(), sourcePosZ1->GetValue());
-            } else if ((gantryID1->GetValue() == 2) && (gantryID2->GetValue() == 2)) {
+            } else if (currentEntryGantryName == "BI-BI") {
                 h_BIBI->Fill(sourcePosX1->GetValue(), sourcePosY1->GetValue(), sourcePosZ1->GetValue());
+            } else {
+                std::cerr << "Warning: unknown gantry.\n";
             }
         }
     }
@@ -124,9 +134,10 @@ void mergeHists(const TString& type) {
     firstHist->SetName("TH3");
     // firstHist->SaveAs(g_outputPath + type + "_true.root");
     // firstHist->SaveAs(g_outputPath + type + "_time.root");
-    firstHist->SaveAs(g_outputPath + type + "_energy.root");
+    // firstHist->SaveAs(g_outputPath + type + "_energy.root");
     // firstHist->SaveAs(g_outputPath + type + "_time_true.root");
     // firstHist->SaveAs(g_outputPath + type + "_energy_true.root");
+    firstHist->SaveAs(g_outputPath + type + "_true_sharareh.root");
     delete firstHist;
 }
 
