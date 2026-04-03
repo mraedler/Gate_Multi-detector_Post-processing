@@ -134,8 +134,6 @@ int main(int argc, char* argv[]) {
     runSequentially(g_fullPaths.size(), processSingleFile);
     // runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
 
-    std::exit(1);
-
     mergeHists();
 
     return 0;
