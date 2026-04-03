@@ -1,5 +1,7 @@
 #include <iostream>
 #include <iomanip>
+// #include <limits.h>
+#include <filesystem>
 #include <TFile.h>
 #include <TH3D.h>
 #include <TSystem.h>
@@ -124,8 +126,11 @@ int main(int argc, char* argv[]) {
     g_treeName = "MergedCoincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
-    // Adapt the same folder structure (last two folders) from the input
-    g_outputPath = "/net/people/plgrid/plgraedler/SensitivityMap/Output/";  // needs to have trailing "/"
+    //
+    std::filesystem::path exePath = std::filesystem::canonical(argv[0]);
+    std::filesystem::path dir = exePath.parent_path();
+    g_outputPath = (dir / "Output" / "").string();  // needs to have trailing "/"
+    // g_outputPath = "/net/people/plgrid/plgraedler/SensitivityMap/Output/";  // needs to have trailing "/"
 
     g_nVoxels = {800, 800, 2540};  // 1×1×1 mm spacing
     g_mapCenter = {0., 0., 0.};  // mm
