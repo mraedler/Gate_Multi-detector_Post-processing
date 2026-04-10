@@ -47,8 +47,6 @@ void processSingleFile(const size_t idx) {
         std::cout << "Missing leaf. Skipping '" << g_fullPaths[idx] << "'." << std::endl;
     }
 
-    if (!checkIfLeafExists(tree, "eventID1")) {std::cout << "eventID1" << std::endl; std::exit(1);}
-
     // Add boolean branch indicating the "trueness"
     Bool_t trueness;
     TBranch* b = tree->Branch("trueness", &trueness, "trueness/O");
