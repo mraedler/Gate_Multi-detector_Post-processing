@@ -44,7 +44,8 @@ void processSingleFile(const size_t idx) {
         checkLeaf(tree, "sourcePosZ1"));
 
     if (!allNecessaryLeafsExist) {
-        std::cout << "Missing leaf. Skipping '" << g_fullPaths[idx] << "'." << std::endl;
+        std::cout << "Missing leaf(s). Skipping '" << g_fullPaths[idx] << "'." << std::endl;
+        return;
     }
 
     // Add boolean branch indicating the "trueness"
