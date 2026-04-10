@@ -568,3 +568,55 @@ void selectBasedOnEnergy(TTree* tree, Bool_t& selection, TBranch* b, const bool 
 		}
 	}
 }
+
+
+
+void checkMaxAxialDifference(TTree* tree, Bool_t& withinMaxAxialDifference, TBranch* b, const std::vector<LutEntry>& lut, double dzMax_mm, bool verbose) {
+
+	// TH1D* hist = new TH1D("Axial difference before selection", ";Axial difference [mm]; Count", 4001, -2000.5, 2000.5);
+
+	TLeaf* castorID1 = tree->GetLeaf("castorID1");
+	TLeaf* castorID2 = tree->GetLeaf("castorID2");
+
+	Long64_t nEntries = tree->GetEntries();
+	float passingPercentage = 0;
+	for (Long64_t ii = 0; ii < nEntries; ii++) {
+		tree->GetEntry(ii);
+		// std::cout <<  << std::endl;
+		int cID1 = castorID1->GetValue();
+		int cID2 = castorID2->GetValue();
+
+		float z1 = lut[cID1].Posz;
+		float z2 = lut[cID2].Posz;
+
+		// hist->Fill(z2 - z1);
+
+		if (std::abs(z2 - z1) <= dzMax_mm) {
+			withinMaxAxialDifference = true;
+		} else {
+			withinMaxAxialDifference = false;
+		}
+
+		passingPercentage += withinMaxAxialDifference;
+
+		b->Fill();
+	}
+
+	std::cout << "Within dzMax: "
+	  << std::fixed << std::setprecision(2)
+	  << (passingPercentage / nEntries * 100)
+	  << " %.\n";
+
+	// TApplication app("app", 0, nullptr);
+	// TCanvas canvas("c", "c", 800, 600);
+	// hist->Draw();
+	// hist->SetStats(0);
+	//
+	// canvas.Update();
+	// TLine* line = new TLine(330., gPad->GetUymin(), 330., gPad->GetUymax());
+	// line->SetLineColor(kRed);
+	// line->SetLineWidth(2);
+	// line->Draw("same");
+	//
+	// app.Run();
+}

@@ -4,6 +4,7 @@
 #include "CASToRTools.h"
 #include <TTree.h>
 #include <TLeaf.h>
+#include <TH1D.h>
 
 void identifyTrueEvents(TTree* tree, Bool_t& bBool, TBranch* b);
 
@@ -37,5 +38,7 @@ void coincidenceGrouping(TTree* tree, Int_t& groupID, TBranch* b0, Int_t& groupE
 std::vector<Long64_t> getGroupEdges(TTree* tree);
 void selectBasedOnTime(TTree* tree, Bool_t& selection, TBranch* b, bool verbose);
 void selectBasedOnEnergy(TTree* tree, Bool_t& selection, TBranch* b, bool verbose);
+
+void checkMaxAxialDifference(TTree* tree, Bool_t& withinMaxAxialDifference, TBranch* b, const std::vector<LutEntry>& lut, double dzMax_mm, bool verbose);
 
 #endif //EVENTSELECTION_H
