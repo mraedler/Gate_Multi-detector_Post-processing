@@ -14,6 +14,7 @@ std::vector<TString> g_fullPaths;
 TString g_gantry;
 TString g_selection;
 TString g_lutName;
+std::vector<LutEntry> g_lut;
 TString g_outputPath;
 TString g_outputFileName;
 uint32_t g_timeInitial_ms, g_timeFinal_ms;
@@ -53,6 +54,11 @@ void processSingleFile(const size_t idx) {
     if (g_selection == "energy") {selectBasedOnEnergy(tree, selection, b, g_verbose);}
     if (g_selection == "time") {selectBasedOnTime(tree, selection, b, g_verbose);}
 
+    // // Add boolean branch for the preselection
+    // Bool_t withinMaxAxialDifference;
+    // TBranch* b2 = tree->Branch("withinMaxAxialDifference", &withinMaxAxialDifference, "withinMaxAxialDifference/O");
+    // checkMaxAxialDifference(tree, withinMaxAxialDifference, b2, g_lut, g_dzMax_mm, g_verbose);
+
     TLeaf* time1 = tree->GetLeaf("time1");
     TLeaf* time2 = tree->GetLeaf("time2");
 
@@ -80,7 +86,12 @@ void processSingleFile(const size_t idx) {
             if (!trueness->GetValue()) {continue;}
         } else if (g_selection == "energy") {
             if (!selection) {continue;}
+        } else if (g_selection == "time") {
+            if (!selection) {continue;}
         }
+
+        // if (!withinMaxAxialDifference) {continue;}
+        //if (withinMaxAxialDifference) {continue;}
 
         TString currentEntryGantryName =  assignGantryName(gantryID1->GetValue(), gantryID2->GetValue());
         if (currentEntryGantryName != g_gantry && g_gantry != "ALL") {continue;}
@@ -95,8 +106,6 @@ void processSingleFile(const size_t idx) {
 
         buffer.push_back({time_ms, delta_time_ps, c1, c2});
     }
-
-    std::exit(1);
 
     // std::cout << buffer.size() << std::endl;
 
@@ -240,18 +249,19 @@ int main(int argc, char* argv[]) {
 
     g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
     g_outputFileName = g_gantry + "_" + g_selection;
+    // g_outputFileName = g_gantry + "_" + g_selection + "_not_" + dzMax_mm;
     g_timeInitial_ms = std::numeric_limits<uint32_t>::max();
     g_timeFinal_ms = std::numeric_limits<uint32_t>::min();
     g_min_dt_ps = std::numeric_limits<float>::max();
     g_max_dt_ps = -std::numeric_limits<float>::max();
+    g_lut = readLutBinary("/data/local1/raedler/J-PET/CASToR/castor/config/scanner/" + g_lutName + ".lut");
 
     // Adapt the same folder structure (last two folders) from the input
     std::vector<TString> pathSplit = splitPath(path);
     g_outputPath += pathSplit[pathSplit.size() - 2] + "/" + pathSplit[pathSplit.size() - 1] + "/";
 
-    runSequentially(g_fullPaths.size(), processSingleFile);
-    // runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
-    std::exit(1);
+    // runSequentially(g_fullPaths.size(), processSingleFile);
+    runInSeparateProcesses(g_fullPaths.size(), processSingleFile, 128);
 
     size_t nEntriesTotal = mergeCastorDataFiles();
     // size_t nEntriesTotal = 1;
