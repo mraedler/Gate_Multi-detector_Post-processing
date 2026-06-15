@@ -101,14 +101,18 @@ int main(int argc, char* argv[]) {
 
     // Set globals
     g_verbose = false;
-    g_minSectorDifference = 2;
-    g_treeName = "MergedCoincidences";
+    g_minSectorDifference = 3;
+    // g_treeName = "MergedCoincidences";
+    g_treeName = "Coincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
-    g_lutName = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    // g_lutName = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    g_lutName = "GE_Discovery_MI";
 
     std::map<std::string, ArgumentOptions> argOpts = {
-        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}}
+        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm",
+            "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm",
+        "GE_Discovery_MI"}, g_lutName}}
     };
 
     parseArguments(argc, argv, argOpts);

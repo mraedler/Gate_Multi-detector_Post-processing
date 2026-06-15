@@ -5,8 +5,10 @@
 #include <iomanip>
 #include <iostream>
 #include <random>
+#include <TF1.h>
 #include <TTree.h>
 #include <TLeaf.h>
+#include <TGraph.h>
 #include <TApplication.h>
 #include <TCanvas.h>
 
@@ -68,6 +70,21 @@ ScannerParams totalBodyJPETWithBrainInsert_6_30()
 				},
 				1.0
 			};
+}
+
+
+
+ScannerParams GEDiscoveryMI()
+{
+	return {
+			        {
+				        {34, 4, 4, 9, 4}
+			        },
+					{
+			            {0.0, 0.0 / g_FWHM_sigma_conversion}
+					},
+					0.0
+				};
 }
 
 
@@ -161,8 +178,60 @@ void setCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* rsectorID, con
 
 
 
+void setCastorID(TTree* tree, const TLeaf* rsectorID, const TLeaf* moduleID, const TLeaf* submoduleID, const TLeaf* crystalID, const TLeaf* globalPosZ, Int_t& castorID, TBranch* b, TString& lutName) {
+	// Get the scanner parameters
+	ScannerParams sp;
+	if (lutName == "GE_Discovery_MI") {
+		sp = GEDiscoveryMI();
+	} else {
+		std::cerr << "Unknown LUT name." << std::endl;
+		std::exit(1);
+	}
+	//
+	Long64_t nEntries = tree->GetEntries();
+
+	TGraph *gr = new TGraph();
+	std::mt19937 gen(std::random_device{}());
+	std::normal_distribution<float> normal(0., 0.1);
+
+	for (Long64_t ii = 0; ii < nEntries; ++ii) {
+		tree->GetEntry(ii);
+		// {34, 4, 4, 9, 4}
+		int rsID = rsectorID->GetValue();
+		int mID = moduleID->GetValue();
+		int smID = submoduleID->GetValue();
+		int cID = crystalID->GetValue();
+
+		// Un-ravel the crystal ID (C-style)
+		int cID_zed = cID / sp.gantryShape[0][4];
+		int cID_lat = cID % sp.gantryShape[0][4];
+
+		// Ravel for consistency check
+		// int cID2 = cID_zed * sp.gantryShape[0][4] + cID_lat;
+		// std::cout << cID - cID2  << std::endl;
+
+		if (mID == 0) {
+			gr->SetPoint(gr->GetN(), cID_zed + normal(gen), globalPosZ->GetValue());
+		}
+		// C-style raveling
+		castorID = ((rsID * sp.gantryShape[0][1] + mID)
+		                  * sp.gantryShape[0][2] + smID)
+		                  * sp.gantryShape[0][3] * sp.gantryShape[0][4] + cID;
+		b->Fill();
+	}
+	delete gr;
+	// TApplication app("app", 0, nullptr);
+	// TCanvas canvas("c", "c", 1200, 600);
+	// gr->SetMarkerStyle(24); // filled circle
+	// gr->Draw("AP");
+	// app.Run();
+}
+
+
+
 void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, const TLeaf* globalPosY, const TLeaf* globalPosZ, Int_t& castorID, const std::vector<LutEntry>& lut) {
-	const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
+	// const ScannerParams sp = totalBodyJPETWithBrainInsert_4_18();
+	const ScannerParams sp = GEDiscoveryMI();
 	int nGantries = sp.gantryShape.size();
 
 	//
@@ -171,6 +240,7 @@ void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, 
 	std::vector<std::vector<float>> longitudinalDeviation(nGantries);
 
 	Long64_t nEntries = tree->GetEntries();
+	auto nEntriesFloat = static_cast<float>(nEntries);
 	for (Long64_t ii = 0; ii < nEntries; ++ii) {
 		tree->GetEntry(ii);
 
@@ -211,20 +281,38 @@ void checkCastorID(TTree* tree, const TLeaf* gantryID, const TLeaf* globalPosX, 
 	TCanvas canvas("c", "c", 1200, 600);
 	canvas.Divide(3, nGantries);
 
+	std::cout << std::fixed << std::setprecision(1) << "Counts within histogram\n=======================" << std::endl;
+
 	for (int jj = 0; jj < nGantries; jj++) {
 
 		canvas.cd(1 + jj * nGantries);
+		// TH1D* histDepthDeviation = getHistogram(depthDeviation[jj], -16., 1., 32, std::to_string(1 + jj * nGantries).c_str(), "; Depth deviation; Count");
 		TH1D* histDepthDeviation = getHistogram(depthDeviation[jj], -16., 1., 32, std::to_string(1 + jj * nGantries).c_str(), "; Depth deviation; Count");
+		float itg = histDepthDeviation->Integral();
+		std::cout << "Depth:        " << static_cast<int>(itg) << " / " << nEntries << " (" << itg / nEntriesFloat * 100 << " %)" << std::endl;
 		histDepthDeviation->Draw();
 		histDepthDeviation->SetStats(0);
 
+		// TF1* f = new TF1("f", "expo", -15, 15);
+		// f->SetParameters(11., -1.5e-02);
+		// f->SetLineColor(kRed);
+		// f->SetLineWidth(2);
+		// f->Draw("SAME");
+
+		// histDepthDeviation->Fit(f);
+
 		canvas.cd(2 + jj * nGantries);
-		TH1D* histLateralDeviation = getHistogram(lateralDeviation[jj], -4., .5, 16, std::to_string(2 + jj * nGantries).c_str(), "; Lateral deviation; Count");
+		// TH1D* histLateralDeviation = getHistogram(lateralDeviation[jj], -4., .5, 16, std::to_string(2 + jj * nGantries).c_str(), "; Lateral deviation; Count");
+		TH1D* histLateralDeviation = getHistogram(lateralDeviation[jj], -8., 1., 16, std::to_string(2 + jj * nGantries).c_str(), "; Lateral deviation; Count");
+		itg = histLateralDeviation->Integral();
+		std::cout << "Lateral:      " << static_cast<int>(itg) << " / " << nEntries << " (" << itg / nEntriesFloat * 100 << " %)" << std::endl;
 		histLateralDeviation->Draw();
 		histLateralDeviation->SetStats(0);
 
 		canvas.cd(3 + jj * nGantries);
-		TH1D* histLongitudinalDeviation = getHistogram(longitudinalDeviation[jj], -8., .1, 160, std::to_string(3 + jj * nGantries).c_str(), "; Longitudinal deviation; Count");
+		TH1D* histLongitudinalDeviation = getHistogram(longitudinalDeviation[jj], -8., 1., 16, std::to_string(3 + jj * nGantries).c_str(), "; Longitudinal deviation; Count");
+		itg = histLongitudinalDeviation->Integral();
+		std::cout << "Longitudinal: " << static_cast<int>(itg) << " / " << nEntries << " (" << itg / nEntriesFloat * 100 << " %)" << std::endl;
 		histLongitudinalDeviation->Draw();
 		histLongitudinalDeviation->SetStats(0);
 	}
@@ -248,6 +336,27 @@ std::vector<CdfEntry> readCdfFile(const TString& filename) {
 	size_t nEntries = fileSize / sizeof(CdfEntry);
 
 	std::vector<CdfEntry> data(nEntries);
+
+	if (!in.read(reinterpret_cast<char*>(data.data()), fileSize)) {throw std::runtime_error("Error reading file: " + filename);}
+
+	return data;
+}
+
+
+std::vector<CdfEntryWithoutTOF> readCdfWithoutTOFFile(const TString& filename) {
+	std::ifstream in(filename, std::ios::binary);
+	if (!in) {throw std::runtime_error("Cannot open file: " + filename);}
+
+	// Determine file size
+	in.seekg(0, std::ios::end);
+	std::streamsize fileSize = in.tellg();
+	in.seekg(0, std::ios::beg);
+
+	if (fileSize % sizeof(CdfEntryWithoutTOF) != 0) {throw std::runtime_error("File size is not a multiple of CdfEntry size");}
+
+	size_t nEntries = fileSize / sizeof(CdfEntryWithoutTOF);
+
+	std::vector<CdfEntryWithoutTOF> data(nEntries);
 
 	if (!in.read(reinterpret_cast<char*>(data.data()), fileSize)) {throw std::runtime_error("Error reading file: " + filename);}
 

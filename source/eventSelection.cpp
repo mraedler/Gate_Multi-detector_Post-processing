@@ -31,14 +31,19 @@ void identifyTrueEvents(TTree *tree, Bool_t& bBool, TBranch* b) {
 	for (Long64_t ii = 0; ii < nEntries; ii++) {
 		tree->GetEntry(ii);
 		bool sameEvent = eventID1->GetValue() == eventID2->GetValue();
+		// std::cout << (eventID1->GetValue() == eventID2->GetValue()) << std::endl;
 
 		bool firstComptonCrystal = (comptonCrystal1->GetValue() == 1) && (comptonCrystal2->GetValue() == 1);
+		bool zeroComptonCrystal = (comptonCrystal1->GetValue() == 0) && (comptonCrystal2->GetValue() == 0);
+		// bool firstComptonCrystal = ((comptonCrystal1->GetValue() == 1) && (comptonCrystal2->GetValue() == 2)) || ((comptonCrystal1->GetValue() == 2) && (comptonCrystal2->GetValue() == 1));
 		bool zeroRayleighCrystal = (rayleighCrystal1->GetValue() == 0) && (rayleighCrystal2->GetValue() == 0);
 
 		bool zeroComptonPhantom = (comptonPhantom1->GetValue() == 0) && (comptonPhantom2->GetValue() == 0);
 		bool zeroRayleighPhantom = (rayleighPhantom1->GetValue() == 0) && (rayleighPhantom2->GetValue() == 0);
 
-		bool trueCoincidence = sameEvent && firstComptonCrystal && zeroRayleighCrystal && zeroComptonPhantom && zeroRayleighPhantom;
+		// bool trueCoincidence = sameEvent && firstComptonCrystal && zeroRayleighCrystal && zeroComptonPhantom && zeroRayleighPhantom;
+		// bool trueCoincidence = sameEvent && zeroComptonCrystal && zeroRayleighCrystal && zeroComptonPhantom && zeroRayleighPhantom;
+		bool trueCoincidence = sameEvent && zeroRayleighCrystal && zeroComptonPhantom && zeroRayleighPhantom;
 
 		bBool = trueCoincidence;
 		passingPercentage += bBool;
@@ -114,6 +119,8 @@ void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf
 		sp = totalBodyJPETWithBrainInsert_6_30();
 	} else if (lutName == "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm") {
 		sp = totalBodyJPETWithBrainInsert_4_18();
+	} else if (lutName == "GE_Discovery_MI") {
+		sp = GEDiscoveryMI();
 	} else {
 		std::cerr << "Unknown LUT name." << std::endl;
 		std::exit(1);
@@ -134,7 +141,8 @@ void runMinSectorDifferenceTest(TTree* tree, const TLeaf* gantryID1, const TLeaf
 
         int sectorDifference = -1;
         if (gID1 == gID2) {
-            int nSectors = sp.gantryShape[gID1][2];
+            // int nSectors = sp.gantryShape[gID1][2];
+            int nSectors = sp.gantryShape[gID1][0];
             int absolute_sector_difference = std::abs(rsID2 - rsID1);
             sectorDifference = std::min(absolute_sector_difference, nSectors - absolute_sector_difference);
         }

@@ -38,27 +38,33 @@ void processSingleFile(const size_t idx) {
         // For the indexing
         TLeaf* gantryID1 = tree->GetLeaf("gantryID1");
         TLeaf* rsectorID1 = tree->GetLeaf("rsectorID1");
+        TLeaf* moduleID1 = tree->GetLeaf("moduleID1");
+        TLeaf* submoduleID1 = tree->GetLeaf("submoduleID1");
         TLeaf* crystalID1 = tree->GetLeaf("crystalID1");
         TLeaf* layerID1 = tree->GetLeaf("layerID1");
 
         // // For the consistency check
-        // TLeaf* globalPosX1 = tree->GetLeaf("globalPosX1");
-        // TLeaf* globalPosY1 = tree->GetLeaf("globalPosY1");
-        // TLeaf* globalPosZ1 = tree->GetLeaf("globalPosZ1");
+        TLeaf* globalPosX1 = tree->GetLeaf("globalPosX1");
+        TLeaf* globalPosY1 = tree->GetLeaf("globalPosY1");
+        TLeaf* globalPosZ1 = tree->GetLeaf("globalPosZ1");
 
-        setCastorID(tree, gantryID1, rsectorID1, crystalID1, layerID1, castorID1, b1, g_lutName);
+        // setCastorID(tree, gantryID1, rsectorID1, crystalID1, layerID1, castorID1, b1, g_lutName);
+        setCastorID(tree, rsectorID1, moduleID1, submoduleID1, crystalID1, globalPosZ1, castorID1, b1, g_lutName);
         // checkCastorID(tree, gantryID1, globalPosX1, globalPosY1, globalPosZ1, castorID1, g_lut);
 
         TLeaf* gantryID2 = tree->GetLeaf("gantryID2");
         TLeaf* rsectorID2 = tree->GetLeaf("rsectorID2");
+        TLeaf* moduleID2 = tree->GetLeaf("moduleID2");
+        TLeaf* submoduleID2 = tree->GetLeaf("submoduleID2");
         TLeaf* crystalID2 = tree->GetLeaf("crystalID2");
         TLeaf* layerID2 = tree->GetLeaf("layerID2");
 
-        // TLeaf* globalPosX2 = tree->GetLeaf("globalPosX2");
-        // TLeaf* globalPosY2 = tree->GetLeaf("globalPosY2");
-        // TLeaf* globalPosZ2 = tree->GetLeaf("globalPosZ2");
+        TLeaf* globalPosX2 = tree->GetLeaf("globalPosX2");
+        TLeaf* globalPosY2 = tree->GetLeaf("globalPosY2");
+        TLeaf* globalPosZ2 = tree->GetLeaf("globalPosZ2");
 
-        setCastorID(tree, gantryID2, rsectorID2, crystalID2, layerID2, castorID2, b2, g_lutName);
+        // setCastorID(tree, gantryID2, rsectorID2, crystalID2, layerID2, castorID2, b2, g_lutName);
+        setCastorID(tree, rsectorID2, moduleID2, submoduleID2, crystalID2, globalPosZ2, castorID2, b2, g_lutName);
         // checkCastorID(tree, gantryID2, globalPosX2, globalPosY2, globalPosZ2, castorID2, g_lut);
     }
     else {
@@ -94,13 +100,18 @@ int main(int argc, char* argv[]) {
 
     // Set globals
     g_verbose = false;
-    g_treeName = "MergedCoincidences";
+    // g_treeName = "MergedCoincidences";
+    g_treeName = "Coincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
-    g_lutName = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    // g_lutName = "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    g_lutName = "GE_Discovery_MI";
 
     std::map<std::string, ArgumentOptions> argOpts = {
-        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}}
+        {"lut", {{
+            "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm",
+            "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm",
+            "GE_Discovery_MI"}, g_lutName}}
     };
 
     parseArguments(argc, argv, argOpts);

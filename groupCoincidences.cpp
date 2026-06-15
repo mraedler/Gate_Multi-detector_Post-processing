@@ -50,7 +50,8 @@ int main(int argc, char* argv[]) {
 
     // Set globals
     g_verbose = false;
-    g_treeName = "MergedCoincidences";
+    // g_treeName = "MergedCoincidences";
+    g_treeName = "Coincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
     // runSequentially(g_fullPaths.size(), processSingleFile);

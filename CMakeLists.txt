@@ -42,6 +42,12 @@ target_link_libraries(groupCoincidences PRIVATE core)
 add_executable(getHistogramFromGateCoincidences getHistogramFromGateCoincidences.cpp)
 target_link_libraries(getHistogramFromGateCoincidences PRIVATE core)
 
+add_executable(getSensitivityMap getSensitivityMap.cpp)
+target_link_libraries(getSensitivityMap PRIVATE core)
+
+add_executable(runTrueSelection runTrueSelection.cpp)
+target_link_libraries(runTrueSelection PRIVATE core)
+
 #add_executable(processRootFiles getSensitivityMapsProcesses.cpp)
 #target_link_libraries(processRootFiles PRIVATE core)
 

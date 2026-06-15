@@ -74,6 +74,7 @@ void processSingleFile(const size_t idx) {
     TLeaf* trueness = tree->GetLeaf("trueness");
 
     std::vector<CdfEntry> buffer;
+    // std::vector<CdfEntryWithoutTOF> buffer;
 
     Long64_t nEntries = tree->GetEntries();
     for (Long64_t ii = 0; ii < nEntries; ++ii) {
@@ -88,6 +89,8 @@ void processSingleFile(const size_t idx) {
             if (!selection) {continue;}
         } else if (g_selection == "time") {
             if (!selection) {continue;}
+        } else if (g_selection == "none") {
+            //
         }
 
         // if (!withinMaxAxialDifference) {continue;}
@@ -105,13 +108,18 @@ void processSingleFile(const size_t idx) {
         uint32_t c2 = castorID2->GetValue();
 
         buffer.push_back({time_ms, delta_time_ps, c1, c2});
+        // buffer.push_back({time_ms, c1, c2});
     }
 
     // std::cout << buffer.size() << std::endl;
 
-    if (gSystem->AccessPathName(g_outputPath)) {gSystem->mkdir(g_outputPath, true);}
+    if (gSystem->AccessPathName(g_outputPath)) {
+        int ret = gSystem->mkdir(g_outputPath, true);
+        std::cout << "mkdir returned " << ret << std::endl;
+    }
     std::ofstream out(g_outputPath + fileName + ".cdf" , std::ios::binary);
     out.write(reinterpret_cast<const char*>(buffer.data()), buffer.size() * sizeof(CdfEntry));
+    // out.write(reinterpret_cast<const char*>(buffer.data()), buffer.size() * sizeof(CdfEntryWithoutTOF));
     out.close();
 }
 
@@ -171,11 +179,13 @@ size_t mergeCastorDataFiles() {
         TString fileName = gSystem->BaseName(g_fullPaths[ii]);
         fileName.Remove(fileName.Last('.'));
         auto buffer = readCdfFile(g_outputPath + fileName + ".cdf");
+        // auto buffer = readCdfWithoutTOFFile(g_outputPath + fileName + ".cdf");
 
         getGlobalMinMaxTime(buffer);
         getGlobalMinMaxDT(buffer);
 
         out.write(reinterpret_cast<const char*>(buffer.data()), buffer.size() * sizeof(CdfEntry));
+        // out.write(reinterpret_cast<const char*>(buffer.data()), buffer.size() * sizeof(CdfEntryWithoutTOF));
         nEntriesTotal += buffer.size();
         gSystem->Unlink(g_outputPath +  fileName + ".cdf");
     }
@@ -205,6 +215,7 @@ void makeCastorDataHeaderFile(size_t nEntriesTotal) {
     file << "Scatter correction flag: 0\n";
     file << "Random correction flag: 0\n";
     file << "TOF information flag: 1\n";
+    // file << "TOF information flag: 0\n";
     file << "TOF resolution (ps): " << g_tof_fwhm_ps << "\n";
     file << "Per event TOF resolution flag: 0\n";
     file << "List TOF measurement range (ps): " << g_max_dt_ps - g_min_dt_ps << "\n";
@@ -226,19 +237,24 @@ int main(int argc, char* argv[]) {
 
     // Set globals
     g_verbose = false;
-    g_treeName = "MergedCoincidences";
+    // g_treeName = "MergedCoincidences";
+    g_treeName = "Coincidences";
     g_fullPaths = getListOfRootFilePaths(path, g_verbose);
 
     g_gantry = "ALL";
     g_selection = "true";
-    g_lutName =  "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    // g_lutName =  "TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm";
+    g_lutName =  "GE_Discovery_MI";
     TString dzMax_mm = "1000";
-    g_tof_fwhm_ps = "400";
+    // g_tof_fwhm_ps = "400";
+    g_tof_fwhm_ps = "530";
 
     std::map<std::string, ArgumentOptions> argOpts = {
         {"gantry", {{"ALL", "TB-TB", "TB-BI", "BI-BI"}, g_gantry}},
-        {"selection", {{"true", "energy", "time"}, g_selection}},
-        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm", "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm"}, g_lutName}},
+        {"selection", {{"true", "energy", "time", "none"}, g_selection}},
+        {"lut", {{"TB_J-PET_7th_gen_brain_insert_WHR_4_18_1_mm",
+            "TB_J-PET_7th_gen_brain_insert_WHR_6_30_1_mm",
+            "GE_Discovery_MI"}, g_lutName}},
         {"dzMax", {{"0", "2000"}, dzMax_mm}},
         {"tof", {{"0", "1000"}, g_tof_fwhm_ps}}
     };
@@ -249,6 +265,7 @@ int main(int argc, char* argv[]) {
 
     g_outputPath = "/data/local1/raedler/J-PET/Gate_Multi-detector_Post-processing/cmake-build-default/Output/";  // needs to have trailing "/"
     g_outputFileName = g_gantry + "_" + g_selection;
+    // g_outputFileName = g_gantry + "_" + g_selection + "_without_TOF";
     // g_outputFileName = g_gantry + "_" + g_selection + "_not_" + dzMax_mm;
     g_timeInitial_ms = std::numeric_limits<uint32_t>::max();
     g_timeFinal_ms = std::numeric_limits<uint32_t>::min();
